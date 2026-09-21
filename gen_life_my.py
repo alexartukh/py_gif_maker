@@ -1,11 +1,12 @@
 import hashlib
 import os
 import random
-from PIL import Image, ImageDraw 
+import time
+from PIL import Image, ImageDraw
 
 # this is a random Life (not a cycle field)
 
-class LifeGenerator:
+class LifeMyGenerator:
     def make_gif(self, text):
 
         frame_dir = "frames"
@@ -129,7 +130,8 @@ class LifeGenerator:
             png_files.append(png_files[idx])
                                 
         frames = [Image.open(f) for f in png_files]
-        gif_filename = os.path.join(os.path.dirname(__file__), "static", "_" + text + ".gif")
+        basename = str(int(time.time())) + "_" + text + ".gif"
+        gif_filename = os.path.join(os.path.dirname(__file__), "static", basename)
         frames[0].save(
             gif_filename,
             save_all=True,
@@ -138,8 +140,8 @@ class LifeGenerator:
             loop=0
         )
 
-        return os.path.join("/static", "_" + text + ".gif")
+        return os.path.join("/static", basename)
 
 if __name__ == "__main__":
-    generator = LifeGenerator()
+    generator = LifeMyGenerator()
     generator.make_gif("Alex Artukh")

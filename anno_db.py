@@ -9,8 +9,8 @@ class AnnoDB:
     def __init__(self):
         self.connection = mysql.connector.connect(
             host="localhost",
-            user="denis_db_user",
-            password="1234512345",
+            user="root",
+            password="",
             database="anno"
         )
 
@@ -19,16 +19,17 @@ class AnnoDB:
         else:
             logger.error("DB connection error")
 
-    def get_user_by_id(self, id):
+    def get_user_by_id(self, login, password):
         try:
             cursor = self.connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM anno_users WHERE id = %s", (id,))
+            cursor.execute("SELECT * FROM anno_users WHERE username = %s AND password = %s AND status = 'active' ", (login, password, ))
             user = cursor.fetchone()
             return user
         except Error as err:
             logger.error("DB Error")
         finally:
             cursor.close()
+
         return None
 
     def get_all_users(self):

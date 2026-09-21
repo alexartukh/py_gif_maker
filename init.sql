@@ -7,6 +7,6 @@ CREATE TABLE IF NOT EXISTS anno_users (
 `status` ENUM('active', 'inactive') DEFAULT 'active',
 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
+INSERT INTO anno_users (username, email, `password`, `status`) VALUES ('denis', 'denis@example.com', '123', 'active');
+INSERT INTO anno_users (username, email, `password`, `status`) VALUES ('alex', 'alex@example.com', '123', 'active');
+INSERT INTO anno_users (username, email, `password`, `status`) VALUES ('test', 'test@example.com', '123', 'active');

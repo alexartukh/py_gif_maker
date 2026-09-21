@@ -1,6 +1,8 @@
 
 {% extends "layout.html" %}
-{% block title %}Annotator {{ version }} {% endblock %}
+
+{% block title %}GIF Maker {{ version }} {% endblock %}
+
 {% block body %}
   <h2>Submit Text</h2>
   <table>
@@ -9,16 +11,25 @@
         Text:
       </td>
       <td>
-        <textarea name="t">1111111111111111111111111111 dgdfgf 4444444444444444</textarea>
+        <input type="text" name="t" value="Denis Bushtruk">
       </td>
     </tr>
 
     <tr>
       <td>
-        User:
+        Login:
       </td>
       <td>
-        <input type="text" name="user" value="1" />
+        <input type="text" name="login" value="denis" />
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Password:
+      </td>
+      <td>
+        <input type="text" name="password" value="123" />
       </td>
     </tr>
 
@@ -28,11 +39,9 @@
       </td>
       <td>
         <select name="template">
-          <option value="1">Annotator 1</option>
-          <option value="2">Annotator 2</option>
-          <option value="3">Annotator 3</option>
-          <option value="4">Make GIF - LIFE</option>
-          <option value="5">Make GIF - F(x,y)</option>
+          <option value="1">Template 1 - LIFE Simple (Original)</option>
+          <option value="2">Template 2 - LIFE My</option>
+          <option value="3">Template 3 - F1(x,y)</option>
         </select>
       </td>
     </tr>
@@ -51,14 +60,14 @@
   <table>
     <tr>
       <td>
-        Result Type 1:
+        Result Raw:
       </td>
       <td id="result_text">        
       </td>
     </tr>
     <tr>
       <td>
-        Result Type 2:
+        Result GIF:
       </td>
       <td>
         <img src="" id="result_image">        

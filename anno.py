@@ -1,8 +1,6 @@
-from email import generator
 import os
 import json
-import redis
-import re
+# import redis
 import time
 
 from jinja2 import Environment
@@ -16,8 +14,15 @@ from werkzeug.routing import Rule
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
+# other modules
 import anno_db
-import anno_life_generator
+
+# generators
+import gen_life_test
+import gen_life_my
+import gen_f1
+
+app_version = "0.0.1"
 
 class Anno:
     def __init__(self, config):
@@ -27,9 +32,9 @@ class Anno:
         self.mysql.get_all_users()
 
         # cache service 
-        self.redis = redis.Redis(
-            config["redis_host"], config["redis_port"], decode_responses=True
-        )
+        # self.redis = redis.Redis(
+        #     config["redis_host"], config["redis_port"], decode_responses=True
+        # )
 
         # template toolkit 
         self.jinja_env = Environment(
@@ -62,7 +67,8 @@ class Anno:
         # get strings from 'application/json' data
         data = request.json; 
         t = data["t"]
-        user = data["user"]
+        login = data["login"]
+        password = data["password"]
         template = data["template"]
         result = None
 
@@ -72,51 +78,40 @@ class Anno:
                 response=json.dumps({ "error": 1, "message": "no text"}),
                 mimetype="application/json"
             )
-        if not user:   
+        if not login or not password:   
             return Response(
-                response=json.dumps({ "error": 1, "message": "no user"}),
+                response=json.dumps({ "error": 1, "message": "no login or password"}),
                 mimetype="application/json"
             )
-        u = self.mysql.get_user_by_id(user)
+        u = self.mysql.get_user_by_id(login, password)
         if not u:   
             return Response(
-                response=json.dumps({ "error": 1, "message": "can't find a user by id"}),
+                response=json.dumps({ "error": 1, "message": "wrong login or password"}),
                 mimetype="application/json"
             )
 
-        # create a pattern or a generator
-        pattern = None
+        # create a generator
         generator = None
-            
         if template == "1":
-            pattern = re.compile(r'\b(\d+)\b')
+            generator = gen_life_test.LifeSimpleGenerator()
         elif template == "2":
-            pattern = re.compile(r'\b([A-Z]\w+)\b')
+            generator = gen_life_my.LifeMyGenerator()
         elif template == "3":
-            pattern = re.compile(r'\b(xxx|yyy|zzz)\b')
-        elif template == "4":
-            generator = anno_life_generator.LifeGenerator()            
+            generator = gen_f1.F1Generator()
         else:
             return Response(
-                response=json.dumps({ "error": 1, "message": "unknown pattern " + template}),
+                response=json.dumps({ "error": 1, "message": "unknown template value " + template}),
                 mimetype="application/json"
             )
 
-        # main processing = use template or generator
-
-        if pattern is not None:
-            result = re.sub(pattern, r'<span style="color:cyan;">\1</span>', t)
-            result_type = 1
+        # main processing = use generator
         if generator is not None:    
             result = generator.make_gif(t)
             result = "http://" + request.host + result
-            result_type = 2
 
         result_data = {
             "result": result,
-            "result_type": result_type,
             "t": t,
-            "user": user,
             "template": template,
         }
 
@@ -124,7 +119,7 @@ class Anno:
                 
 
     def on_home(self, request):
-        return self.render_template("tester.html", version="0.1", timestamp=time.time())
+        return self.render_template("tester.html", version=app_version, timestamp=time.time())
     
     def error_404(self):
         response = self.render_template("404.html") 

@@ -1,14 +1,16 @@
 import hashlib
 import os
-import random
-from PIL import Image, ImageDraw 
+import time
+from PIL import Image, ImageDraw
 
-# f(x,y) pseudo random function
+class F1Generator:
 
-class FGenerator:
-
+    # f(x,y) pseudo random function
     def f(self, y, x):
         return ((((x ^ y) & ((x - 350) >> 3)) ** 2) >> 12) & 1
+
+    def get_description(self):
+        return f"Используется "
 
     def make_gif(self, text):
 
@@ -95,7 +97,8 @@ class FGenerator:
             png_files.append(png_files[idx])
                                 
         frames = [Image.open(f) for f in png_files]
-        gif_filename = os.path.join(os.path.dirname(__file__), "static", "_" + text + ".gif")
+        basename = str(int(time.time())) + "_" + text + ".gif"
+        gif_filename = os.path.join(os.path.dirname(__file__), "static", basename)
         frames[0].save(
             gif_filename,
             save_all=True,
@@ -104,8 +107,8 @@ class FGenerator:
             loop=0
         )
 
-        return os.path.join("/static", "_" + text + ".gif")
+        return os.path.join("/static", basename)
 
 if __name__ == "__main__":
-    generator = FGenerator()
+    generator = F1Generator()
     generator.make_gif("Alex Artukh")
