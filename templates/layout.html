@@ -1,0 +1,17 @@
+<!doctype html>
+
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css?timestamp={{ timestamp }}" >
+  <script
+    src="https://code.jquery.com/jquery-4.0.0.js"
+    integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U="
+    crossorigin="anonymous">
+  </script>
+  <script src="/static/main.js?timestamp={{ timestamp }}" ></script>
+</head>
+
+<body>
+  <p class=tagline>Python WSGI</p>
+  {% block body %}{% endblock %}
+</body>

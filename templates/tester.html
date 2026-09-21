@@ -1,0 +1,69 @@
+
+{% extends "layout.html" %}
+{% block title %}Annotator {{ version }} {% endblock %}
+{% block body %}
+  <h2>Submit Text</h2>
+  <table>
+    <tr>
+      <td>
+        Text:
+      </td>
+      <td>
+        <textarea name="t">1111111111111111111111111111 dgdfgf 4444444444444444</textarea>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        User:
+      </td>
+      <td>
+        <input type="text" name="user" value="1" />
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Template:
+      </td>
+      <td>
+        <select name="template">
+          <option value="1">Annotator 1</option>
+          <option value="2">Annotator 2</option>
+          <option value="3">Annotator 3</option>
+          <option value="4">Make GIF - LIFE</option>
+          <option value="5">Make GIF - F(x,y)</option>
+        </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        <input type="submit" id="submit_button" value="Annotate">
+      </td>
+      <td>
+      </td>
+    </tr> 
+  </table>
+
+  <h2>Result</h2>
+
+  <table>
+    <tr>
+      <td>
+        Result Type 1:
+      </td>
+      <td id="result_text">        
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Result Type 2:
+      </td>
+      <td>
+        <img src="" id="result_image">        
+      </td>
+    </tr>
+  </table>
+
+{% endblock %}

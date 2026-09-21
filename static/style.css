@@ -1,0 +1,20 @@
+textarea {
+    width: 50%;
+    min-height: 13lh;
+    max-height: 18lh;
+}
+
+table {
+    border: 2px solid black;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table td {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+table td:first-child {
+    width: 20%;
+}
