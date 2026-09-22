@@ -3,10 +3,17 @@ import random
 import time
 from PIL import Image, ImageDraw
 
-# this is a pure Convay's Life (no random colors)
-
 class LifeSimpleGenerator:
-    def make_gif(self, text):
+
+    def get_description(self):
+        return [
+            "Оригинальная Life Конвея",
+            "Использукется для тестирования",
+            "Переданный текст не влияет ни на что",
+            "Матрица инициализируется случайным образом",
+        ]
+    
+    def make_gif(self, text, uid):
 
         frame_dir = "frames"
         num_frames = 20
@@ -32,16 +39,20 @@ class LifeSimpleGenerator:
             a.append(line_a)
             b.append(line_b)
 
+        hex_color = "#FF0000"
+        hex_color_bg = "#000000"
+        hex_color_line = "#FFFFFF"
+
         for k in range(num_frames):
-            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color="#000000")
+            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color_bg)
             draw = ImageDraw.Draw(img)
 
             # draw grid
             for i in range(height + 1):
-                draw.line([(0, i * sz), (width * sz + 1, i * sz)], fill="white", width=1)
+                draw.line([(0, i * sz), (width * sz + 1, i * sz)], fill=hex_color_line, width=1)
 
             for j in range(width + 1):
-                draw.line([(j * sz, 0), (j * sz, height * sz + 1)], fill="white", width=1)
+                draw.line([(j * sz, 0), (j * sz, height * sz + 1)], fill=hex_color_line, width=1)
 
             # draw filled cells
             for i in range(height):
@@ -49,7 +60,7 @@ class LifeSimpleGenerator:
                     if a[i][j]:
                         draw.rectangle(
                             [(i * sz + 1, j * sz + 1), ((i + 1) * sz - 1, (j + 1) * sz - 1)],
-                            fill="red",
+                            fill=hex_color,
                         )
 
             # create matrix B from A
@@ -92,10 +103,11 @@ class LifeSimpleGenerator:
             img.save(png_file)
             png_files.append(png_file)
 
-        # make gif
+        os.makedirs("static/" + str(uid), exist_ok=True)
+
         frames = [Image.open(f) for f in png_files]
         basename = str(int(time.time())) + "_" + text + ".gif"
-        gif_filename = os.path.join(os.path.dirname(__file__), "static", basename)
+        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
             save_all=True,
@@ -104,8 +116,8 @@ class LifeSimpleGenerator:
             loop=0
         )
 
-        return os.path.join("/static", basename)
+        return "/static/" + str(uid) + "/" + basename
 
 if __name__ == "__main__":
     generator = LifeSimpleGenerator()
-    generator.make_gif("Alex Artukh")
+    generator.make_gif("TESTING", 0)

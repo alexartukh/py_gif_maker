@@ -1,5 +1,6 @@
 jQuery(function() {
     jQuery("#submit_button").click(function(e) {
+
         let t = jQuery("input[name=t]").val();
         let login = jQuery("input[name=login]").val();
         let password = jQuery("input[name=password]").val();

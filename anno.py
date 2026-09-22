@@ -20,7 +20,7 @@ import anno_db
 # generators
 import gen_life_test
 import gen_life_my
-import gen_f1
+import gen_f
 
 app_version = "0.0.1"
 
@@ -42,7 +42,6 @@ class Anno:
             autoescape=True
         )
 
-        # map
         self.url_map = Map(
             [
                 # HTML Pages
@@ -55,29 +54,44 @@ class Anno:
             ]
         )        
 
+# ---------------------------------------------------------------------
+
     def on_annotate(self, request):
 
-        # check method
-        if request.method != "POST":
+        # 2 request me
+        data = None
+        if request.method == "GET":
+            # in = normal args, out = GIF file
+            json_response = False
+            data = request.args  
+        elif request.method == "POST":
+            # in = JSON, out = JSON
+            json_response = True
+            data = request.json
+        else:
             return Response(
-                response=json.dumps({ "error": 1, "message": "wrong method"}),
+                response=json.dumps({"error": 1, "message": "unsupported request method", "value": request.method}),
                 mimetype="application/json"
             )
 
-        # get strings from 'application/json' data
-        data = request.json; 
-        t = data["t"]
-        login = data["login"]
-        password = data["password"]
-        template = data["template"]
+        t = data.get("t") or "NO_SEED" 
+        login = data.get("login") or None
+        password = data.get("password") or None
+
         result = None
+        template = None
+        u = None
 
-        # check form data
-        if not t:
+        # get template ID
+        try:
+            template = int(data.get("template"))
+        except (TypeError, ValueError):
             return Response(
-                response=json.dumps({ "error": 1, "message": "no text"}),
+                response=json.dumps({"error": 1, "message": "template must be an integer", "value": template}),
                 mimetype="application/json"
             )
+
+        # get user from MySQL
         if not login or not password:   
             return Response(
                 response=json.dumps({ "error": 1, "message": "no login or password"}),
@@ -92,34 +106,44 @@ class Anno:
 
         # create a generator
         generator = None
-        if template == "1":
-            generator = gen_life_test.LifeSimpleGenerator()
-        elif template == "2":
+        if template >= 1 and template <= 5:
+            generator = gen_f.FGenerator(template)
+        elif template == 100:
+            generator = gen_life_test.LifeSimpleGenerator()        
+        elif template == 200:
             generator = gen_life_my.LifeMyGenerator()
-        elif template == "3":
-            generator = gen_f1.F1Generator()
         else:
             return Response(
                 response=json.dumps({ "error": 1, "message": "unknown template value " + template}),
                 mimetype="application/json"
             )
 
-        # main processing = use generator
+        # use generator
         if generator is not None:    
-            result = generator.make_gif(t)
-            result = "http://" + request.host + result
+            result = generator.make_gif(t, u['id'])
 
-        result_data = {
-            "result": result,
-            "t": t,
-            "template": template,
-        }
+        # POST result : send JSON with a URL inside as a response
+        if json_response:  
+            result_data = {
+                "result": "http://" + request.host + result,
+                "t": t,
+                "template": template,
+                "description": generator.get_description(),
+            }
+            return Response(response=json.dumps(result_data), mimetype="application/json")
 
-        return Response(response=json.dumps(result_data), mimetype="application/json")
-                
+        # GET result : send a file as a response
+        with open('.' + result, "rb") as f:
+            gif_data = f.read()
+        return Response(
+            response=gif_data,
+            mimetype="image/gif"
+        )
+
+# ---------------------------------------------------------------------
 
     def on_home(self, request):
-        return self.render_template("tester.html", version=app_version, timestamp=time.time())
+        return self.render_template("testing_post.html", version=app_version, timestamp=time.time())
     
     def error_404(self):
         response = self.render_template("404.html") 

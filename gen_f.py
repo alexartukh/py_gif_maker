@@ -3,16 +3,34 @@ import os
 import time
 from PIL import Image, ImageDraw
 
-class F1Generator:
+class FGenerator:
 
-    # f(x,y) pseudo random function
+    def __init__(self, t):
+        self.type = t
+
     def f(self, y, x):
-        return ((((x ^ y) & ((x - 350) >> 3)) ** 2) >> 12) & 1
+        if self.type == 1:
+            return ((((x ^ y) & ((x - 350) >> 3)) ** 2) >> 12) & 1
+        if self.type == 2:
+            return (((x ^ y) & (x + y)) >> ((x + y) % 10)) & 1
+        if self.type == 3:
+            return (((x ^ y) & (x + y)) >> (y % 10)) & 1
+        if self.type == 4:
+            return bin(x & y).count("1") % 2
+        if self.type == 5:
+            a = ((((x ^ y) & ((x - 350) >> 3)) ** 2) >> 12) & 1
+            b = ((((x + y) & (x - y)) ** 3) >> 9) & 1
+            return a ^ b
+
+        return 0
 
     def get_description(self):
-        return f"Используется "
+        return [
+            "Сложная булевая функция от двух переменных",
+            "2 байта из MD5 влияют на начальную позицию окна",
+        ]
 
-    def make_gif(self, text):
+    def make_gif(self, text, uid):
 
         frame_dir = "frames"
         num_frames = 20 
@@ -32,33 +50,21 @@ class F1Generator:
         # get MD5 digest in a non-hex form, just an array of bytes
         digest = hashlib.md5(text.encode('utf-8')).digest()
 
-        # colors from hash
-        red = digest[0]
-        green = digest[1]
-        blue = digest[2]
+        hex_color = "#FF0000"
+        hex_color_bg = "#000000"
+        hex_color_line = "#FFFFFF"
 
-        red2 = 255 - digest[0]
-        green2 = 255 - digest[1]
-        blue2 = 255 - digest[2]
-
-        red3 = digest[3]
-        green3 = digest[4]
-        blue3 = digest[5]
-
-        hex_color = f"#{red:02X}{green:02X}{blue:02X}"
-        hex_color_inv = f"#{red2:02X}{green2:02X}{blue2:02X}"
-        hex_color_line = f"#{red3:02X}{green3:02X}{blue3:02X}"
+        # окно будет перемещаться от этой левой верхней точки
+        ii = digest[6]
+        jj = digest[7]
 
         for bytes in range(6, 16): # byes with indexes 6-15
             for offset in range(1,9): # 1-8
                 v = (digest[6] >> offset) & 1
                 bits.append(v)
 
-        ii = 200
-        jj = 250
-
         for k in range(num_frames):
-            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color)
+            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color_bg)
             draw = ImageDraw.Draw(img)
 
             # draw grid
@@ -71,6 +77,8 @@ class F1Generator:
             # calculate values 
             for i in range(height):
                 for j in range(width):
+                    # просто передаем оставшиеся байты внутрь функции
+                    # возможно, что не все эти параметры будут использованны
                     a[i][j] = self.f(ii + i, jj + j)
 
             # draw filled cells
@@ -79,7 +87,7 @@ class F1Generator:
                     if a[i][j]:
                         draw.rectangle(
                             [(i * sz + 1, j * sz + 1), ((i + 1) * sz - 1, (j + 1) * sz - 1)],
-                            fill=hex_color_inv,
+                            fill=hex_color,
                         )
             
             png_file = os.path.join(frame_dir, "frame_" + str(k) + ".png")
@@ -95,10 +103,12 @@ class F1Generator:
         last_idx = len(png_files) - 1
         for idx in range(last_idx - 1, 1, -1):
             png_files.append(png_files[idx])
+
+        os.makedirs("static/" + str(uid), exist_ok=True)
                                 
         frames = [Image.open(f) for f in png_files]
         basename = str(int(time.time())) + "_" + text + ".gif"
-        gif_filename = os.path.join(os.path.dirname(__file__), "static", basename)
+        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
             save_all=True,
@@ -107,8 +117,8 @@ class F1Generator:
             loop=0
         )
 
-        return os.path.join("/static", basename)
+        return "/static/" + str(uid) + "/" + basename
 
 if __name__ == "__main__":
-    generator = F1Generator()
-    generator.make_gif("Alex Artukh")
+    generator = FGenerator()
+    generator.make_gif("TESTING", 0)

@@ -4,21 +4,28 @@ import random
 import time
 from PIL import Image, ImageDraw
 
-# this is a random Life (not a cycle field)
-
 class LifeMyGenerator:
-    def make_gif(self, text):
+    def get_description(self):
+        return [
+            "Усовершенствованная Life Конвея",
+            "Переданный текст преобразуется в MD5 хеш (16 байт)",
+            "10 байт из MD5 влияют на то, как будут использованны находящиеся рядом соседи",
+            "Матрица всегда инициализируется 50/50 одним и тем же зерном",
+        ]
+
+    def make_gif(self, text, uid):
 
         frame_dir = "frames"
-        skip_frames = 5
-        num_frames = 20 
-        width = 50 # width in cells 
-        height = 50 # height in cells
+        skip_frames = 5 # эти кадры будут пропущены и не будут использоваться при создании GIF-ки
+        num_frames = 20 # количество кадров в гифке
+        width = 50 # ширина в ячейках
+        height = 50 # высота в ячейках
         sz = 10
         png_files = []
         a = []
         b = []
         bits = []
+        random.seed(42)
 
         # initial state for 'a' and 'b'
         for i in range(height):
@@ -38,22 +45,9 @@ class LifeMyGenerator:
         # get MD5 digest in a non-hex form, just an array of bytes
         digest = hashlib.md5(text.encode('utf-8')).digest()
 
-        # colors from hash
-        red = digest[0]
-        green = digest[1]
-        blue = digest[2]
-
-        red2 = 255 - digest[0]
-        green2 = 255 - digest[1]
-        blue2 = 255 - digest[2]
-
-        red3 = digest[3]
-        green3 = digest[4]
-        blue3 = digest[5]
-
-        hex_color = f"#{red:02X}{green:02X}{blue:02X}"
-        hex_color_inv = f"#{red2:02X}{green2:02X}{blue2:02X}"
-        hex_color_line = f"#{red3:02X}{green3:02X}{blue3:02X}"
+        hex_color = "#FF0000"
+        hex_color_bg = "#000000"
+        hex_color_line = "#FFFFFF"
 
         max_near = 0;
         for bytes in range(6, 16): # byes with indexes 6-15
@@ -63,7 +57,7 @@ class LifeMyGenerator:
                 if v == 1: max_near = max_near + 1
 
         for k in range(num_frames + skip_frames):
-            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color)
+            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color_bg)
             draw = ImageDraw.Draw(img)
 
             # draw grid
@@ -79,7 +73,7 @@ class LifeMyGenerator:
                     if a[i][j]:
                         draw.rectangle(
                             [(i * sz + 1, j * sz + 1), ((i + 1) * sz - 1, (j + 1) * sz - 1)],
-                            fill=hex_color_inv,
+                            fill=hex_color,
                         )
 
             # create matrix B from A
@@ -129,9 +123,11 @@ class LifeMyGenerator:
         for idx in range(last_idx - 1, 1, -1):
             png_files.append(png_files[idx])
                                 
+        os.makedirs("static/" + str(uid), exist_ok=True)
+
         frames = [Image.open(f) for f in png_files]
         basename = str(int(time.time())) + "_" + text + ".gif"
-        gif_filename = os.path.join(os.path.dirname(__file__), "static", basename)
+        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
             save_all=True,
@@ -140,8 +136,8 @@ class LifeMyGenerator:
             loop=0
         )
 
-        return os.path.join("/static", basename)
+        return "/static/" + str(uid) + "/" + basename
 
 if __name__ == "__main__":
     generator = LifeMyGenerator()
-    generator.make_gif("Alex Artukh")
+    generator.make_gif("TESTING", 0)
