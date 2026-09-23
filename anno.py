@@ -24,7 +24,8 @@ import gen_life_test
 import gen_life_my
 import gen_f
 
-app_version = "0.0.1"
+APP_VERSION = "0.0.1"
+TTL_ADMIN_SESSION = 3600
 
 class Anno:
     def __init__(self, config):
@@ -34,7 +35,7 @@ class Anno:
 
         # admin sessions (MySQL-backed, table: admin_sessions)
         self.admin_sessions = anno_admin_session.AdminSession(
-            self.mysql.connection, ttl_seconds=3600
+            self.mysql.connection, ttl_seconds=TTL_ADMIN_SESSION
         )
 
         # template toolkit 
@@ -45,12 +46,15 @@ class Anno:
 
         self.url_map = Map(
             [
-                # HTML Pages
+                # Pages for testing
                 Rule("/testing_post", endpoint="testing_post"), # show tester for POST requests
                 Rule("/testing_get", endpoint="testing_get"), # show tester for GET requests
-                Rule("/", endpoint="admin"),
-                Rule("/admin", endpoint="admin"),
+
+                # Admin
+                Rule("/", endpoint="admin_login"),
+                Rule("/admin", endpoint="admin_login"),
                 Rule("/admin_submit_password", endpoint="admin_submit_password"),
+                Rule("/admin_logout", endpoint="admin_logout"),
                 Rule("/admin_main", endpoint="admin_main"),
 
                 # Web Service
@@ -79,7 +83,7 @@ class Anno:
                 mimetype="application/json"
             )
 
-        u = self.mysql.get_user(login, password)
+        u = self.mysql.get_user_by_login_and_password(login, password)
         if not u:
             return Response(
                 response=json.dumps({"error": 1, "message": "wrong login or password"}),
@@ -171,6 +175,7 @@ class Anno:
         )
 
 # ---------------------------------------------------------------------
+
     def on_admin_submit_password(self, request):
         if request.method != "POST":
             return Response(
@@ -183,29 +188,33 @@ class Anno:
         login = data.get("username") or None
         password = data.get("password") or None
 
-        u = self.mysql.get_user(login, password)
+        u = self.mysql.get_user_by_login_and_password(login, password)
         if u is None:
-            return self.render_template("admin_login.html", version=app_version, timestamp=time.time(), message="Wrong login or password")
+            return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Wrong login or password")
 
         session_id = self.admin_sessions.create_session(u['id'])
         if session_id is None:
-            return self.render_template("admin_login.html", version=app_version, timestamp=time.time(), message="Login failed, try again")
+            return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Unable to create a session record")
 
         response = redirect("/admin_main")
         response.set_cookie(
             "session_id",
             session_id,
-            max_age=3600,
+            max_age=TTL_ADMIN_SESSION,
             httponly=True,
-            samesite="Lax"
+            samesite="Strict"
         )
         return response
 
-    def on_admin(self, request):
-        return self.render_template("admin_login.html", version=app_version, timestamp=time.time(), message="Enter login and password")
+    def on_admin_logout(self, request):
+        session_id = request.cookies.get("session_id")
+        self.admin_sessions.destroy_session(session_id)
+        return redirect("/admin")
+
+    def on_admin_login(self, request):
+        return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Enter login and password")
 
     def on_admin_main(self, request):
-
         # check session first
         session_id = request.cookies.get("session_id")
         user_id = self.admin_sessions.get_session(session_id) if session_id else None
@@ -213,15 +222,26 @@ class Anno:
         if user_id is None:
             return redirect("/admin")
 
-        return self.render_template("admin_main.html", version=app_version, timestamp=time.time())
+        user = self.mysql.get_user_by_id(user_id)
 
+        return self.render_template(
+            "admin_main.html",
+            version=APP_VERSION,
+            timestamp=time.time(),
+            welcome_message="Welcome " + user["username"] + " (" + user["email"] + ")",
+            show_logout_link=True
+        )
+
+# ---------------------------------------------------------------------
 
     def on_testing_post(self, request):
-        return self.render_template("testing_post.html", version=app_version, timestamp=time.time())
+        return self.render_template("testing_post.html", version=APP_VERSION, timestamp=time.time())
 
     def on_testing_get(self, request):
-        return self.render_template("testing_get.html", version=app_version, timestamp=time.time())
-    
+        return self.render_template("testing_get.html", version=APP_VERSION, timestamp=time.time())
+
+# ---------------------------------------------------------------------
+
     def error_404(self):
         response = self.render_template("404.html") 
         response.status_code = 404
@@ -250,8 +270,8 @@ class Anno:
         return self.wsgi_app(environ, start_response)
 
 
-def create_app(redis_host="localhost", redis_port=6379, with_static=True):
-    app = Anno({"redis_host": redis_host, "redis_port": redis_port})
+def create_app(with_static=True):
+    app = Anno({})
     if with_static:
         app.wsgi_app = SharedDataMiddleware(
             app.wsgi_app,
