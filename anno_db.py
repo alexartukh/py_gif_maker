@@ -19,7 +19,7 @@ class AnnoDB:
         else:
             logger.error("DB connection error")
 
-    def get_user_by_id(self, login, password):
+    def get_user(self, login, password):
         try:
             cursor = self.connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM anno_users WHERE username = %s AND password = %s AND status = 'active' ", (login, password, ))

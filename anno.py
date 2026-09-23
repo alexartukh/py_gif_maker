@@ -16,6 +16,7 @@ from werkzeug.wrappers import Response
 
 # other modules
 import anno_db
+import anno_auth
 
 # generators
 import gen_life_test
@@ -45,18 +46,52 @@ class Anno:
         self.url_map = Map(
             [
                 # HTML Pages
-                Rule("/", endpoint="home"),
+                Rule("/testing_post", endpoint="testing_post"), # show tester for POST requests
+                Rule("/testing_get", endpoint="testing_get"), # show tester for GET requests
                 Rule("/admin", endpoint="admin"),
-                Rule("/account", endpoint="account"),
 
                 # Web Service
-                Rule("/anno", endpoint="annotate"),
+                Rule("/g", endpoint="generate"),
+                Rule("/login", endpoint="login"),
             ]
-        )        
+        )
 
 # ---------------------------------------------------------------------
 
-    def on_annotate(self, request):
+    def on_login(self, request):
+        if request.method != "POST":
+            return Response(
+                response=json.dumps({"error": 1, "message": "POST required"}),
+                mimetype="application/json",
+                status=405
+            )
+
+        data = request.json
+        login = data.get("login") or None
+        password = data.get("password") or None
+
+        if not login or not password:
+            return Response(
+                response=json.dumps({"error": 1, "message": "no login or password"}),
+                mimetype="application/json"
+            )
+
+        u = self.mysql.get_user(login, password)
+        if not u:
+            return Response(
+                response=json.dumps({"error": 1, "message": "wrong login or password"}),
+                mimetype="application/json"
+            )
+
+        token = anno_auth.make_token(u["id"])
+        return Response(
+            response=json.dumps({"error": 0, "token": token}),
+            mimetype="application/json"
+        )
+
+# ---------------------------------------------------------------------
+
+    def on_generate(self, request):
 
         # 2 request me
         data = None
@@ -75,12 +110,10 @@ class Anno:
             )
 
         t = data.get("t") or "NO_SEED" 
-        login = data.get("login") or None
-        password = data.get("password") or None
+        token = data.get("token") or None
 
         result = None
         template = None
-        u = None
 
         # get template ID
         try:
@@ -91,16 +124,10 @@ class Anno:
                 mimetype="application/json"
             )
 
-        # get user from MySQL
-        if not login or not password:   
-            return Response(
-                response=json.dumps({ "error": 1, "message": "no login or password"}),
-                mimetype="application/json"
-            )
-        u = self.mysql.get_user_by_id(login, password)
+        u = anno_auth.verify_token(token);
         if not u:   
             return Response(
-                response=json.dumps({ "error": 1, "message": "wrong login or password"}),
+                response=json.dumps({ "error": 1, "message": "wrong auth token"}),
                 mimetype="application/json"
             )
 
@@ -120,7 +147,7 @@ class Anno:
 
         # use generator
         if generator is not None:    
-            result = generator.make_gif(t, u['id'])
+            result = generator.make_gif(t, u)
 
         # POST result : send JSON with a URL inside as a response
         if json_response:  
@@ -142,8 +169,11 @@ class Anno:
 
 # ---------------------------------------------------------------------
 
-    def on_home(self, request):
+    def on_testing_post(self, request):
         return self.render_template("testing_post.html", version=app_version, timestamp=time.time())
+
+    def on_testing_get(self, request):
+        return self.render_template("testing_get.html", version=app_version, timestamp=time.time())
     
     def error_404(self):
         response = self.render_template("404.html") 
@@ -188,5 +218,6 @@ def create_app(redis_host="localhost", redis_port=6379, with_static=True):
 if __name__ == "__main__":
     from werkzeug.serving import run_simple
     app = create_app()
-    run_simple("127.0.0.1", 5555, app, use_debugger=True, use_reloader=True)
+    # run_simple("127.0.0.1", 5555, app, use_debugger=True, use_reloader=True)
+    run_simple("0.0.0.0", 5555, app, use_debugger=True, use_reloader=True)
 
