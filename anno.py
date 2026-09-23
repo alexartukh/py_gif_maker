@@ -3,6 +3,7 @@ import json
 import time
 import threading
 import hashlib
+import shutil
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -73,6 +74,7 @@ class Anno:
                 Rule("/admin", endpoint="admin_login"),
                 Rule("/admin_submit_password", endpoint="admin_submit_password"),
                 Rule("/admin_logout", endpoint="admin_logout"),
+                Rule("/admin_clear_cache", endpoint="admin_clear_cache"),
                 Rule("/admin_main", endpoint="admin_main"),
 
                 # Web Service
@@ -244,6 +246,22 @@ class Anno:
     def on_admin_login(self, request):
         return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Enter login and password")
 
+    def on_admin_clear_cache(self, request):
+        # check session first
+        session_id = request.cookies.get("session_id")
+        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+
+        if user_id is None:
+            return redirect("/admin")
+
+        self.mysql.clear_cache_for_user(user_id)
+        shutil.rmtree(
+            os.path.join(os.path.dirname(__file__), "static", str(user_id)),
+            ignore_errors=True
+        )
+        
+        return redirect("/admin_main")
+
     def on_admin_main(self, request):
         # check session first
         session_id = request.cookies.get("session_id")
@@ -253,13 +271,15 @@ class Anno:
             return redirect("/admin")
 
         user = self.mysql.get_user_by_id(user_id)
+        task_count = self.mysql.get_task_count_for_user(user_id)
 
         return self.render_template(
             "admin_main.html",
             version=APP_VERSION,
             timestamp=time.time(),
             welcome_message="Welcome " + user["username"] + " (" + user["email"] + ")",
-            show_logout_link=True
+            show_logout_link=True,
+            tasks_for_this_user=task_count[0],
         )
 
 # ---------------------------------------------------------------------

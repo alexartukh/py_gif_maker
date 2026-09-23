@@ -20,7 +20,8 @@ class AnnoDB:
             )
             user = cursor.fetchone()
             return user
-        except Error as err:
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
             return None
         finally:
             cursor.close()
@@ -35,7 +36,8 @@ class AnnoDB:
             )
             user = cursor.fetchone()
             return user
-        except Error as err:
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
             return None
         finally:
             cursor.close()
@@ -49,7 +51,8 @@ class AnnoDB:
                 (user_id, template, md5_hash, gif_filename)
             )
             self.connection.commit()
-        except Error:
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
             return None
         finally:
             cursor.close()
@@ -65,7 +68,40 @@ class AnnoDB:
             )
             task = cursor.fetchone()
             return task
-        except Error:
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
+            return None
+        finally:
+            cursor.close()
+
+    def clear_cache_for_user(self, user_id):
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                "DELETE FROM anno_tasks "
+                "WHERE user_id = %s ",
+                (user_id, )
+            )
+            self.connection.commit()
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
+            return None
+        finally:
+            cursor.close()
+
+    def get_task_count_for_user(self, user_id):
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                "SELECT COUNT(id) AS ctr "
+                "FROM anno_tasks "
+                "WHERE user_id = %s ",
+                (user_id, )
+            )
+            row = cursor.fetchone()
+            return row
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
             return None
         finally:
             cursor.close()
