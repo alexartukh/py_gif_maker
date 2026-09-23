@@ -1,9 +1,13 @@
+import hashlib
 import os
 import random
 import time
 from PIL import Image, ImageDraw
 
 class LifeSimpleGenerator:
+
+    def __init__(self):
+            self.type = 100
 
     def get_description(self):
         return [
@@ -13,7 +17,7 @@ class LifeSimpleGenerator:
             "Матрица инициализируется случайным образом",
         ]
     
-    def make_gif(self, text, uid):
+    def make_gif(self, digest, uid):
 
         frame_dir = "frames"
         num_frames = 20
@@ -106,7 +110,7 @@ class LifeSimpleGenerator:
         os.makedirs("static/" + str(uid), exist_ok=True)
 
         frames = [Image.open(f) for f in png_files]
-        basename = str(int(time.time())) + "_" + text + ".gif"
+        basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
         gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
@@ -120,4 +124,5 @@ class LifeSimpleGenerator:
 
 if __name__ == "__main__":
     generator = LifeSimpleGenerator()
-    generator.make_gif("TESTING", 0)
+    text = "TESTING"
+    generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)

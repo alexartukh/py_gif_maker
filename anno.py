@@ -1,6 +1,8 @@
 import os
 import json
 import time
+import threading
+import hashlib
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -26,6 +28,13 @@ import gen_f
 
 APP_VERSION = "0.0.1"
 TTL_ADMIN_SESSION = 3600
+ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS = 300
+
+def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
+    while True:
+        time.sleep(interval_seconds)
+        admin_sessions.cleanup_expired()
+
 
 class Anno:
     def __init__(self, config):
@@ -37,6 +46,15 @@ class Anno:
         self.admin_sessions = anno_admin_session.AdminSession(
             self.mysql.connection, ttl_seconds=TTL_ADMIN_SESSION
         )
+
+        # background thread that purges expired sessions periodically;
+        # always on, including under the dev reloader
+        self.cleanup_thread = threading.Thread(
+            target=run_periodic_admin_session_cleanup,
+            args=(self.admin_sessions, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
+            daemon=True
+        )
+        self.cleanup_thread.start()
 
         # template toolkit 
         self.jinja_env = Environment(
@@ -116,13 +134,11 @@ class Anno:
                 mimetype="application/json"
             )
 
-        t = data.get("t") or "NO_SEED" 
+        t = data.get("t") or "" # empty seed is correct seed as well 
         token = data.get("token") or None
 
-        result = None
-        template = None
-
         # get template ID
+        template = None
         try:
             template = int(data.get("template"))
         except (TypeError, ValueError):
@@ -138,7 +154,11 @@ class Anno:
                 mimetype="application/json"
             )
 
-        # create a generator
+        result = None
+        md5_value = hashlib.md5(t.encode('utf-8')).digest()
+        md5_value_hex = md5_value.hex()
+
+        # create a generator in any case
         generator = None
         if template >= 1 and template <= 5:
             generator = gen_f.FGenerator(template)
@@ -152,9 +172,18 @@ class Anno:
                 mimetype="application/json"
             )
 
-        # use generator
-        if generator is not None:    
-            result = generator.make_gif(t, u)
+        # cache in action or run a new task
+        task = self.mysql.search_for_task(u, template, md5_value_hex)
+        if task is None:
+            print('Run a new task for a template ' + str(template))    
+            result = generator.make_gif(md5_value, u)
+
+            # save task record in the DB
+            self.mysql.create_task_record(u, template, md5_value_hex, result)
+        else:
+            # cache in action
+            result = task[0]
+            print('Cache in action : ' + result)
 
         # POST result : send JSON with a URL inside as a response
         if json_response:  
@@ -163,6 +192,7 @@ class Anno:
                 "t": t,
                 "template": template,
                 "description": generator.get_description(),
+                "md5_value": md5_value_hex,
             }
             return Response(response=json.dumps(result_data), mimetype="application/json")
 

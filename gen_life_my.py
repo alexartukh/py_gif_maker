@@ -5,6 +5,10 @@ import time
 from PIL import Image, ImageDraw
 
 class LifeMyGenerator:
+
+    def __init__(self):
+            self.type = 200
+
     def get_description(self):
         return [
             "Усовершенствованная Life Конвея",
@@ -13,7 +17,8 @@ class LifeMyGenerator:
             "Матрица всегда инициализируется 50/50 одним и тем же зерном",
         ]
 
-    def make_gif(self, text, uid):
+    def make_gif(self, digest, uid):
+
 
         frame_dir = "frames"
         skip_frames = 5 # эти кадры будут пропущены и не будут использоваться при создании GIF-ки
@@ -41,9 +46,6 @@ class LifeMyGenerator:
 
             a.append(line_a)
             b.append(line_b)
-
-        # get MD5 digest in a non-hex form, just an array of bytes
-        digest = hashlib.md5(text.encode('utf-8')).digest()
 
         hex_color = "#FF0000"
         hex_color_bg = "#000000"
@@ -126,7 +128,7 @@ class LifeMyGenerator:
         os.makedirs("static/" + str(uid), exist_ok=True)
 
         frames = [Image.open(f) for f in png_files]
-        basename = str(int(time.time())) + "_" + text + ".gif"
+        basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
         gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
@@ -140,4 +142,5 @@ class LifeMyGenerator:
 
 if __name__ == "__main__":
     generator = LifeMyGenerator()
-    generator.make_gif("TESTING", 0)
+    text = "TESTING"
+    generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)

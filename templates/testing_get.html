@@ -7,30 +7,18 @@
 <script>
   jQuery(function () {
 
-    function waitForToken(callback, attempt) {
-      if (attempt >= 10) {
-        console.error("GIF MAKER: token not received after", attempt, "attempts");
-        return;
-      }
-
-      if (window.gifMakerAuthToken) {
-        callback();
-      } else {
-        setTimeout(function () { waitForToken(callback, attempt + 1); }, 1000);
-      }
-    }
-
-    waitForToken(function () {
-      let url1 = "http://localhost:5555/g?token=__TOKEN__&t=123&template=1";
-      let url2 = "http://localhost:5555/g?token=__TOKEN__&t=123&template=2";
-      let url3 = "http://localhost:5555/g?token=__TOKEN__&t=888&template=200";
-      let url4 = "http://localhost:5555/g?token=__TOKEN__&t=999&template=200";
+    // window.gifMakerAuthToken should be defined before a button click
+    jQuery("#assign_images_button").click(function () {
+      let url1 = "http://localhost:5555/g?token=__TOKEN__&t=&template=1";
+      let url2 = "http://localhost:5555/g?token=__TOKEN__&t=&template=2";
+      let url3 = "http://localhost:5555/g?token=__TOKEN__&t=&template=200";
+      let url4 = "http://localhost:5555/g?token=__TOKEN__&t=qqq&template=200";
 
       jQuery('#demo1').attr('src', url1.replace('__TOKEN__', window.gifMakerAuthToken));
       jQuery('#demo2').attr('src', url2.replace('__TOKEN__', window.gifMakerAuthToken));
       jQuery('#demo3').attr('src', url3.replace('__TOKEN__', window.gifMakerAuthToken));
       jQuery('#demo4').attr('src', url4.replace('__TOKEN__', window.gifMakerAuthToken));
-    }, 1);
+    });
 
   });
 </script>
@@ -54,20 +42,26 @@
   </tr>
 
   <tr>
-    <td>
-      <img id="demo1" src="">
-    </td>
-    <td>
-      <img id="demo2" src="">
+    <td colspan="2">
+      <input type="button" id="assign_images_button" value="Get Images">
     </td>
   </tr>
 
   <tr>
     <td>
-      <img id="demo3" src="">
+      <img id="demo1" src="" alt="Waiting...">
     </td>
     <td>
-      <img id="demo4" src="">
+      <img id="demo2" src="" alt="Waiting...">
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <img id="demo3" src="" alt="Waiting...">
+    </td>
+    <td>
+      <img id="demo4" src="" alt="Waiting...">
     </td>
   </tr>
 

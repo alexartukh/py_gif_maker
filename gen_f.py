@@ -30,7 +30,7 @@ class FGenerator:
             "2 байта из MD5 влияют на начальную позицию окна",
         ]
 
-    def make_gif(self, text, uid):
+    def make_gif(self, digest, uid):
 
         frame_dir = "frames"
         num_frames = 20 
@@ -46,9 +46,6 @@ class FGenerator:
             for j in range(width):
                 line.append(0)
             a.append(line)
-
-        # get MD5 digest in a non-hex form, just an array of bytes
-        digest = hashlib.md5(text.encode('utf-8')).digest()
 
         hex_color = "#FF0000"
         hex_color_bg = "#000000"
@@ -107,7 +104,7 @@ class FGenerator:
         os.makedirs("static/" + str(uid), exist_ok=True)
                                 
         frames = [Image.open(f) for f in png_files]
-        basename = str(int(time.time())) + "_" + text + ".gif"
+        basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
         gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
@@ -120,5 +117,6 @@ class FGenerator:
         return "/static/" + str(uid) + "/" + basename
 
 if __name__ == "__main__":
-    generator = FGenerator()
-    generator.make_gif("TESTING", 0)
+    generator = FGenerator(1)
+    text = "TESTING"
+    generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)
