@@ -19,7 +19,7 @@ class AnnoDB:
         else:
             logger.error("DB connection error")
 
-    def get_user(self, login, password):
+    def get_user_by_login_and_password(self, login, password):
         try:
             cursor = self.connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM anno_users WHERE username = %s AND password = %s AND status = 'active' ", (login, password, ))
@@ -32,14 +32,15 @@ class AnnoDB:
 
         return None
 
-    def get_all_users(self):
+    def get_user_by_id(self, uid):
         try:
             cursor = self.connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM anno_users")
-            users = cursor.fetchall()
-            for user in users:
-                print(f"ID: {user['id']} | Name: {user['username']} | Email: {user['email']}")
+            cursor.execute("SELECT * FROM anno_users WHERE id = %s AND status = 'active' ", (uid, ))
+            user = cursor.fetchone()
+            return user
         except Error as err:
             logger.error("DB Error")
         finally:
             cursor.close()
+
+        return None

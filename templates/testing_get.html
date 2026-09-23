@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "layout4testing.html" %}
 {% block title %}GIF Maker {{ version }} {% endblock %}
 {% block body %}
 
@@ -23,8 +23,8 @@
     waitForToken(function () {
       let url1 = "http://localhost:5555/g?token=__TOKEN__&t=123&template=1";
       let url2 = "http://localhost:5555/g?token=__TOKEN__&t=123&template=2";
-      let url3 = "http://localhost:5555/g?token=__TOKEN__&t=123&template=200";
-      let url4 = "http://localhost:5555/g?token=__TOKEN__&t=abc&template=200";
+      let url3 = "http://localhost:5555/g?token=__TOKEN__&t=888&template=200";
+      let url4 = "http://localhost:5555/g?token=__TOKEN__&t=999&template=200";
 
       jQuery('#demo1').attr('src', url1.replace('__TOKEN__', window.gifMakerAuthToken));
       jQuery('#demo2').attr('src', url2.replace('__TOKEN__', window.gifMakerAuthToken));

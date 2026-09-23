@@ -14,7 +14,7 @@ def make_token(user_id, ttl=TOKEN_TTL_SECONDS):
     sig = hmac.new(SECRET_KEY, payload_b64, hashlib.sha256).digest()
     sig_b64 = base64.urlsafe_b64encode(sig).rstrip(b"=")
     token = (payload_b64 + b"." + sig_b64).decode("utf-8")
-    print(token)
+    # token is something like MToxNzkwMTYwNjgy.EwyZ-TRxF8InzXiZePHrElWi2wz6lPi3_bbvUa-aG48
     return token
 
 def verify_token(token):

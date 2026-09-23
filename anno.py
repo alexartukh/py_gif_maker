@@ -1,6 +1,5 @@
 import os
 import json
-# import redis
 import time
 
 from jinja2 import Environment
@@ -13,10 +12,12 @@ from werkzeug.routing import Map
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
+from werkzeug.utils import redirect
 
 # other modules
 import anno_db
 import anno_auth
+import anno_admin_session
 
 # generators
 import gen_life_test
@@ -30,12 +31,11 @@ class Anno:
 
         # mysql access
         self.mysql = anno_db.AnnoDB()
-        self.mysql.get_all_users()
 
-        # cache service 
-        # self.redis = redis.Redis(
-        #     config["redis_host"], config["redis_port"], decode_responses=True
-        # )
+        # admin sessions (MySQL-backed, table: admin_sessions)
+        self.admin_sessions = anno_admin_session.AdminSession(
+            self.mysql.connection, ttl_seconds=3600
+        )
 
         # template toolkit 
         self.jinja_env = Environment(
@@ -48,7 +48,10 @@ class Anno:
                 # HTML Pages
                 Rule("/testing_post", endpoint="testing_post"), # show tester for POST requests
                 Rule("/testing_get", endpoint="testing_get"), # show tester for GET requests
+                Rule("/", endpoint="admin"),
                 Rule("/admin", endpoint="admin"),
+                Rule("/admin_submit_password", endpoint="admin_submit_password"),
+                Rule("/admin_main", endpoint="admin_main"),
 
                 # Web Service
                 Rule("/g", endpoint="generate"),
@@ -168,6 +171,50 @@ class Anno:
         )
 
 # ---------------------------------------------------------------------
+    def on_admin_submit_password(self, request):
+        if request.method != "POST":
+            return Response(
+                response=json.dumps({"error": 1, "message": "POST required"}),
+                mimetype="application/json",
+                status=405
+            )
+
+        data = request.form
+        login = data.get("username") or None
+        password = data.get("password") or None
+
+        u = self.mysql.get_user(login, password)
+        if u is None:
+            return self.render_template("admin_login.html", version=app_version, timestamp=time.time(), message="Wrong login or password")
+
+        session_id = self.admin_sessions.create_session(u['id'])
+        if session_id is None:
+            return self.render_template("admin_login.html", version=app_version, timestamp=time.time(), message="Login failed, try again")
+
+        response = redirect("/admin_main")
+        response.set_cookie(
+            "session_id",
+            session_id,
+            max_age=3600,
+            httponly=True,
+            samesite="Lax"
+        )
+        return response
+
+    def on_admin(self, request):
+        return self.render_template("admin_login.html", version=app_version, timestamp=time.time(), message="Enter login and password")
+
+    def on_admin_main(self, request):
+
+        # check session first
+        session_id = request.cookies.get("session_id")
+        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+
+        if user_id is None:
+            return redirect("/admin")
+
+        return self.render_template("admin_main.html", version=app_version, timestamp=time.time())
+
 
     def on_testing_post(self, request):
         return self.render_template("testing_post.html", version=app_version, timestamp=time.time())

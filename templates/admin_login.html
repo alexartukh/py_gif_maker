@@ -1,0 +1,42 @@
+{% extends "layout4admin.html" %}
+{% block title %}GIF Maker {{ version }} {% endblock %}
+{% block body %}
+
+<h2>Login</h2>
+
+<form method="POST" action="/admin_submit_password">
+<table>
+  <tr>
+    <td>
+      Username:
+    </td>
+    <td>
+      <input type="text" name="username" value="">
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Password:
+    </td>
+    <td>
+        <input type="password" name="password" value="">
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2">
+      <input type="submit" value="Login">
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2">
+      {{ message }}
+    </td>
+  </tr>
+
+</table>
+</form>
+
+{% endblock %}

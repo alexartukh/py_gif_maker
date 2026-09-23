@@ -1,0 +1,27 @@
+<!doctype html>
+
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css?timestamp={{ timestamp }}" >
+  <script
+    src="https://code.jquery.com/jquery-4.0.0.js"
+    integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U="
+    crossorigin="anonymous">
+  </script>
+</head>
+
+<body>
+  {% block body %}{% endblock %}
+</body>
+
+<div>
+    &nbsp;
+</div>
+<div>
+    <a href="/testing_post">Testing POST requests</a>&nbsp;|&nbsp;<a href="/testing_get">Testing GET requests</a>
+    {% if show_logout_link %}
+        &nbsp;|&nbsp;
+        <a href="/admin_logout">Logout</a>
+        
+    {% endif %}
+</div>
