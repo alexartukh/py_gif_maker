@@ -176,9 +176,7 @@ class Anno:
 
         # cache in action or run a new task
         task = self.mysql.search_for_task(u, template, md5_value_hex)
-        # TODO
-        # remove this later    
-        task = None # disable cache for testing
+        # task = None # disable cache for testing
 
         if task is None:
             print('Run a new task for a template ' + str(template))    
