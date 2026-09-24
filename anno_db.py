@@ -44,7 +44,7 @@ class AnnoDB:
 
     def create_task_record(self, user_id, template, md5_hash, gif_filename):
         try:
-            cursor = self.connection.cursor()
+            cursor = self.connection.cursor(dictionary=True)
             cursor.execute(
                 "INSERT INTO anno_tasks (user_id, template, md5_hash, gif_filename) "
                 "VALUES (%s, %s, %s, %s) ",
@@ -59,15 +59,17 @@ class AnnoDB:
 
     def search_for_task(self, user_id, template, md5_hash):
         try:
-            cursor = self.connection.cursor()
+            cursor = self.connection.cursor(dictionary=True)
             cursor.execute(
                 "SELECT gif_filename FROM anno_tasks "
-                "WHERE user_id = %s AND template = %s AND md5_hash = %s "
-                "LIMIT 1 ",
+                "WHERE user_id = %s AND template = %s AND md5_hash = %s ",
                 (user_id, template, md5_hash)
             )
             task = cursor.fetchone()
-            return task
+            if not task:
+                return None
+            
+            return task.get("gif_filename")
         except Error as e:
             print("!! MySQL error !! " + str(e))
             return None
@@ -76,7 +78,7 @@ class AnnoDB:
 
     def clear_cache_for_user(self, user_id):
         try:
-            cursor = self.connection.cursor()
+            cursor = self.connection.cursor(dictionary=True)
             cursor.execute(
                 "DELETE FROM anno_tasks "
                 "WHERE user_id = %s ",
@@ -91,7 +93,7 @@ class AnnoDB:
 
     def get_task_count_for_user(self, user_id):
         try:
-            cursor = self.connection.cursor()
+            cursor = self.connection.cursor(dictionary=True)
             cursor.execute(
                 "SELECT COUNT(id) AS ctr "
                 "FROM anno_tasks "
@@ -99,7 +101,7 @@ class AnnoDB:
                 (user_id, )
             )
             row = cursor.fetchone()
-            return row
+            return row["ctr"]
         except Error as e:
             print("!! MySQL error !! " + str(e))
             return None

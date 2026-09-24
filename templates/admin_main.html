@@ -7,11 +7,32 @@
 <table>
 
     <tr>
-        <td colspan="2">
+        <td>
             {{ welcome_message }}
         </td>
         <td>
-            {{ tasks_for_this_user }} cached task(s) <a href="/admin_clear_cache">Clear cache for this user</a>
+            {{ tasks_for_this_user }} cached task(s)
+            &nbsp;|&nbsp;
+            <a href="/admin_clear_cache">
+                Clear cache for this user
+            </a>
+        </td>        
+    </tr>
+
+    <tr>
+        <td>
+            Select template:
+        </td>
+        <td>
+            {% include "list_of_templates.html" %}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Set properties:
+        </td>
+        <td>
+            
         </td>
     </tr>
 

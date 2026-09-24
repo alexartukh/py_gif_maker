@@ -184,7 +184,7 @@ class Anno:
             self.mysql.create_task_record(u, template, md5_value_hex, result)
         else:
             # cache in action
-            result = task[0]
+            result = task
             print('Cache in action : ' + result)
 
         # POST result : send JSON with a URL inside as a response
@@ -279,7 +279,7 @@ class Anno:
             timestamp=time.time(),
             welcome_message="Welcome " + user["username"] + " (" + user["email"] + ")",
             show_logout_link=True,
-            tasks_for_this_user=task_count[0],
+            tasks_for_this_user=task_count,
         )
 
 # ---------------------------------------------------------------------
