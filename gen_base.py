@@ -11,7 +11,6 @@ class GifGeneratorBase:
         self.hex_color_bg = "#000000"
         self.hex_color_line = "#FFFFFF"
 
-        self.frame_dir = "frames"
         self.num_frames = 20
         self.width = 50
         self.height = 50
@@ -61,12 +60,13 @@ class GifGeneratorBase:
         return img
 
     def save_frame(self, img, frame_number):
-        png_file = os.path.join(self.frame_dir, "frame_" + str(frame_number) + ".png")
+        png_file = os.path.dirname(__file__) + "/frames/frame_" + str(frame_number) + ".png"
+        os.makedirs(os.path.dirname(__file__) + "/frames", exist_ok=True)
         img.save(png_file)
         self.png_files.append(png_file)
 
     def create_gif_file(self, uid, digest):
-        os.makedirs("static/" + str(uid), exist_ok=True)
+        os.makedirs(os.path.dirname(__file__) + "/static/" + str(uid), exist_ok=True)
         frames = [Image.open(f) for f in self.png_files]
         basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
         gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename

@@ -170,7 +170,7 @@ class Anno:
             generator = gen_life_my.LifeMyGenerator()
         else:
             return Response(
-                response=json.dumps({ "error": 1, "message": "unknown template value " + template}),
+                response=json.dumps({ "error": 1, "message": "unknown template value " + str(template)}),
                 mimetype="application/json"
             )
 
@@ -287,12 +287,50 @@ class Anno:
         )
 
 # ---------------------------------------------------------------------
+    # a tesing page will be displayed in any case, 
+    # but if a user has a logged in session, his login and password will be used 
 
     def on_testing_post(self, request):
-        return self.render_template("testing_post.html", version=APP_VERSION, timestamp=time.time())
+        session_id = request.cookies.get("session_id")
+        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+
+        # this is a default service user for testing
+        login = "test"
+        password = "123"
+
+        if user_id is not None:
+            user = self.mysql.get_user_by_id(user_id)
+            login = user["username"]
+            password = user["password"]
+        
+        return self.render_template(
+            "testing_post.html",
+            version=APP_VERSION,
+            timestamp=time.time(),
+            test_login=login,
+            test_password=password,
+        )
 
     def on_testing_get(self, request):
-        return self.render_template("testing_get.html", version=APP_VERSION, timestamp=time.time())
+        session_id = request.cookies.get("session_id")
+        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+
+        # this is a default service user for testing
+        login = "test"
+        password = "123"
+
+        if user_id is not None:
+            user = self.mysql.get_user_by_id(user_id)
+            login = user["username"]
+            password = user["password"]
+            
+        return self.render_template(
+            "testing_get.html",
+            version=APP_VERSION,
+            timestamp=time.time(),
+            test_login=login,
+            test_password=password,
+        )
 
 # ---------------------------------------------------------------------
 

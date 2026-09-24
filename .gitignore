@@ -1,6 +1,6 @@
-static/
-!static/main.js
-!static/css.js
+static/*
+!static/testing_shared.js
+!static/style.css
 
 frames/
 __pycache__/

@@ -7,6 +7,11 @@
 <script>
   jQuery(function () {
 
+    let login = "{{ test_login }}";
+    let password = "{{ test_password }}";
+
+    get_auth_token(login, password);
+
     // window.gifMakerAuthToken should be defined before a button click
     jQuery("#assign_images_button").click(function () {
       let url1 = "http://localhost:5555/g?token=__TOKEN__&t=&template=1";

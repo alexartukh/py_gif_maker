@@ -4,6 +4,12 @@
 
 <script>
   jQuery(function () {
+
+    let login = "{{ test_login }}";
+    let password = "{{ test_password }}";
+
+    get_auth_token(login, password);
+
     jQuery("#submit_button").click(function () {
 
       let t = jQuery("input[name=t]").val();

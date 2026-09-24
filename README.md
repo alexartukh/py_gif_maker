@@ -20,11 +20,8 @@
 1. jinja2 - шаблонизатор - https://jinja.palletsprojects.com/en/stable/
 2. werkzeug - WSGI toolkit - https://werkzeug.palletsprojects.com/en/stable/
 
-2 инструмента для сохранения данных в процессе работа с программой :
-1. mysql.connector - соединенеие с локальным MySQL - https://dev.mysql.com/doc/connector-python/en/quick-installation-guide.html
-2. redis соединенеие с локальным Redis - https://redis.readthedocs.io/en/stable/
-
-Кеширование с использованием Redis нужно, т.к. генерация GIF файла занимает продолжительное время.
+долгосрочное сохранение данных в процессе работа с программой :
+mysql.connector - соединенеие с локальным MySQL - https://dev.mysql.com/doc/connector-python/en/quick-installation-guide.html
 
 Генераторы (gen_* файлы) в тестовых целях могут запускаться сами по себе.
 Аргумент для тестовой генерации гифки находится в самом низу .py файла.
