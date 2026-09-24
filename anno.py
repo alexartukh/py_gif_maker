@@ -31,10 +31,10 @@ APP_VERSION = "0.0.1"
 TTL_ADMIN_SESSION = 3600
 ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS = 300
 
-def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
-    while True:
-        time.sleep(interval_seconds)
-        admin_sessions.cleanup_expired()
+# def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
+#     while True:
+#         time.sleep(interval_seconds)
+#         admin_sessions.cleanup_expired()
 
 
 class Anno:
@@ -50,12 +50,12 @@ class Anno:
 
         # background thread that purges expired sessions periodically;
         # always on, including under the dev reloader
-        self.cleanup_thread = threading.Thread(
-            target=run_periodic_admin_session_cleanup,
-            args=(self.admin_sessions, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
-            daemon=True
-        )
-        self.cleanup_thread.start()
+        # self.cleanup_thread = threading.Thread(
+        #     target=run_periodic_admin_session_cleanup,
+        #     args=(self.admin_sessions, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
+        #     daemon=True
+        # )
+        # self.cleanup_thread.start()
 
         # template toolkit 
         self.jinja_env = Environment(
@@ -176,6 +176,10 @@ class Anno:
 
         # cache in action or run a new task
         task = self.mysql.search_for_task(u, template, md5_value_hex)
+        # TODO
+        # remove this later    
+        task = None # disable cache for testing
+
         if task is None:
             print('Run a new task for a template ' + str(template))    
             result = generator.make_gif(md5_value, u)

@@ -1,83 +1,42 @@
 import hashlib
-import os
-import random
-import time
-from PIL import Image, ImageDraw
 
-class LifeSimpleGenerator:
+from gen_base import GifGeneratorBase
+
+class LifeSimpleGenerator(GifGeneratorBase):
 
     def __init__(self):
-            self.type = 100
+        super().__init__()
+        self.type = 100
 
     def get_description(self):
         return [
             "Оригинальная Life Конвея",
             "Использукется для тестирования",
             "Переданный текст не влияет ни на что",
-            "Матрица инициализируется случайным образом",
+            "Исходная матрица инициализируется случайным образом 50 на 50",
         ]
     
     def make_gif(self, digest, uid):
-
-        frame_dir = "frames"
-        num_frames = 20
-        width = 25 # width in cells
-        height = 25 # height in cells
-        sz = 10
-        png_files = []
         a = []
         b = []
+        self.init_matrix_50_50(a)
+        self.init_matrix_zeros(b)
 
-        # initial state for 'a' and 'b'
-        for i in range(height):
-            line_a = []
-            line_b = []
-            for j in range(width):
-                if random.random() > 0.5:
-                    v = 1
-                else:
-                    v = 0
-                line_a.append(v)
-                line_b.append(0)
+        for k in range(self.num_frames):
 
-            a.append(line_a)
-            b.append(line_b)
-
-        hex_color = "#FF0000"
-        hex_color_bg = "#000000"
-        hex_color_line = "#FFFFFF"
-
-        for k in range(num_frames):
-            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color_bg)
-            draw = ImageDraw.Draw(img)
-
-            # draw grid
-            for i in range(height + 1):
-                draw.line([(0, i * sz), (width * sz + 1, i * sz)], fill=hex_color_line, width=1)
-
-            for j in range(width + 1):
-                draw.line([(j * sz, 0), (j * sz, height * sz + 1)], fill=hex_color_line, width=1)
-
-            # draw filled cells
-            for i in range(height):
-                for j in range(width):
-                    if a[i][j]:
-                        draw.rectangle(
-                            [(i * sz + 1, j * sz + 1), ((i + 1) * sz - 1, (j + 1) * sz - 1)],
-                            fill=hex_color,
-                        )
+            img = self.draw_frame(a)
 
             # create matrix B from A
-            for i in range(height):
-                for j in range(width):
+            for i in range(self.height):
+                for j in range(self.width):
                     left = j - 1
                     right = j + 1
                     up = i - 1
                     down = i + 1
-                    if (down == height): down = 0
-                    if (up < 0): up = height - 1
-                    if (right == width): right = 0
-                    if (left < 0): left = width - 1
+                    if (down == self.height): down = 0
+                    if (up < 0): up = self.height - 1
+                    if (right == self.width): right = 0
+                    if (left < 0): left = self.width - 1
 
                     near = 0
                     if (a[up][j]): near = near + 1
@@ -103,24 +62,11 @@ class LifeSimpleGenerator:
 
             a = b
 
-            png_file = os.path.join(frame_dir, "frame_" + str(k) + ".png")
-            img.save(png_file)
-            png_files.append(png_file)
+            self.save_frame(img, k)
 
-        os.makedirs("static/" + str(uid), exist_ok=True)
+        filename = self.create_gif_file(uid, digest)
 
-        frames = [Image.open(f) for f in png_files]
-        basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
-        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
-        frames[0].save(
-            gif_filename,
-            save_all=True,
-            append_images=frames[1:],
-            duration=100,
-            loop=0
-        )
-
-        return "/static/" + str(uid) + "/" + basename
+        return filename
 
 if __name__ == "__main__":
     generator = LifeSimpleGenerator()

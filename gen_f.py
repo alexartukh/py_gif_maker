@@ -1,11 +1,11 @@
 import hashlib
-import os
-import time
-from PIL import Image, ImageDraw
 
-class FGenerator:
+from gen_base import GifGeneratorBase
+
+class FGenerator(GifGeneratorBase):
 
     def __init__(self, t):
+        super().__init__()
         self.type = t
 
     def f(self, y, x):
@@ -31,90 +31,34 @@ class FGenerator:
         ]
 
     def make_gif(self, digest, uid):
-
-        frame_dir = "frames"
-        num_frames = 20 
-        width = 50 # width in cells 
-        height = 50 # height in cells
-        sz = 10
-        png_files = []
         a = []
-        bits = []
-
-        for i in range(height):
-            line = []
-            for j in range(width):
-                line.append(0)
-            a.append(line)
-
-        hex_color = "#FF0000"
-        hex_color_bg = "#000000"
-        hex_color_line = "#FFFFFF"
+        self.init_matrix_zeros(a)
 
         # окно будет перемещаться от этой левой верхней точки
         ii = digest[6]
         jj = digest[7]
 
-        for bytes in range(6, 16): # byes with indexes 6-15
-            for offset in range(1,9): # 1-8
-                v = (digest[6] >> offset) & 1
-                bits.append(v)
-
-        for k in range(num_frames):
-            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color_bg)
-            draw = ImageDraw.Draw(img)
-
-            # draw grid
-            for i in range(height + 1):
-                draw.line([(0, i * sz), (width * sz + 1, i * sz)], fill=hex_color_line, width=1)
-
-            for j in range(width + 1):
-                draw.line([(j * sz, 0), (j * sz, height * sz + 1)], fill=hex_color_line, width=1)
+        for k in range(self.num_frames):
 
             # calculate values 
-            for i in range(height):
-                for j in range(width):
-                    # просто передаем оставшиеся байты внутрь функции
-                    # возможно, что не все эти параметры будут использованны
+            for i in range(self.height):
+                for j in range(self.width):
                     a[i][j] = self.f(ii + i, jj + j)
-
-            # draw filled cells
-            for i in range(height):
-                for j in range(width):
-                    if a[i][j]:
-                        draw.rectangle(
-                            [(i * sz + 1, j * sz + 1), ((i + 1) * sz - 1, (j + 1) * sz - 1)],
-                            fill=hex_color,
-                        )
             
-            png_file = os.path.join(frame_dir, "frame_" + str(k) + ".png")
-            img.save(png_file)
-            png_files.append(png_file)
+            img = self.draw_frame(a)
+            self.save_frame(img, k)
 
-            # up-down
-            jj += 1
-            # left-right
-            ii += 1
+            jj += 1 # up-down
+            ii += 1 # left-right
 
-        # append almost all (except first and last) reversed array to itself
-        last_idx = len(png_files) - 1
+        # make movie : append almost all (except first and last) reversed array to itself
+        last_idx = len(self.png_files) - 1
         for idx in range(last_idx - 1, 1, -1):
-            png_files.append(png_files[idx])
+            self.png_files.append(self.png_files[idx])
 
-        os.makedirs("static/" + str(uid), exist_ok=True)
-                                
-        frames = [Image.open(f) for f in png_files]
-        basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
-        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
-        frames[0].save(
-            gif_filename,
-            save_all=True,
-            append_images=frames[1:],
-            duration=100,
-            loop=0
-        )
-
-        return "/static/" + str(uid) + "/" + basename
+        filename = self.create_gif_file(uid, digest)
+        
+        return filename
 
 if __name__ == "__main__":
     generator = FGenerator(1)

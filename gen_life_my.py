@@ -1,13 +1,13 @@
 import hashlib
-import os
 import random
-import time
-from PIL import Image, ImageDraw
 
-class LifeMyGenerator:
+from gen_base import GifGeneratorBase
+
+class LifeMyGenerator(GifGeneratorBase):
 
     def __init__(self):
-            self.type = 200
+        super().__init__()
+        self.type = 200
 
     def get_description(self):
         return [
@@ -18,69 +18,28 @@ class LifeMyGenerator:
         ]
 
     def make_gif(self, digest, uid):
-
-
-        frame_dir = "frames"
-        skip_frames = 5 # эти кадры будут пропущены и не будут использоваться при создании GIF-ки
-        num_frames = 20 # количество кадров в гифке
-        width = 50 # ширина в ячейках
-        height = 50 # высота в ячейках
-        sz = 10
-        png_files = []
+        frames2skip = 5    
+        random.seed(42)
         a = []
         b = []
+        self.init_matrix_50_50(a)
+        self.init_matrix_zeros(b)
+
+        max_near = 0
         bits = []
-        random.seed(42)
-
-        # initial state for 'a' and 'b'
-        for i in range(height):
-            line_a = []
-            line_b = []
-            for j in range(width):
-                if random.random() > 0.5:
-                    v = 1
-                else:
-                    v = 0
-                line_a.append(v)
-                line_b.append(0)
-
-            a.append(line_a)
-            b.append(line_b)
-
-        hex_color = "#FF0000"
-        hex_color_bg = "#000000"
-        hex_color_line = "#FFFFFF"
-
-        max_near = 0;
-        for bytes in range(6, 16): # byes with indexes 6-15
+        for b_idx in range(6, 16): # byes with indexes 6-15
             for offset in range(1,9): # 1-8
-                v = (digest[6] >> offset) & 1
+                v = (digest[b_idx] >> offset) & 1
                 bits.append(v)
                 if v == 1: max_near = max_near + 1
 
-        for k in range(num_frames + skip_frames):
-            img = Image.new("RGB", (width * sz + 1, height * sz + 1), color=hex_color_bg)
-            draw = ImageDraw.Draw(img)
+        for k in range(self.num_frames + frames2skip):
 
-            # draw grid
-            for i in range(height + 1):
-                draw.line([(0, i * sz), (width * sz + 1, i * sz)], fill=hex_color_line, width=1)
-
-            for j in range(width + 1):
-                draw.line([(j * sz, 0), (j * sz, height * sz + 1)], fill=hex_color_line, width=1)
-
-            # draw filled cells
-            for i in range(height):
-                for j in range(width):
-                    if a[i][j]:
-                        draw.rectangle(
-                            [(i * sz + 1, j * sz + 1), ((i + 1) * sz - 1, (j + 1) * sz - 1)],
-                            fill=hex_color,
-                        )
+            img = self.draw_frame(a)
 
             # create matrix B from A
-            for i in range(height):
-                for j in range(width):
+            for i in range(self.height):
+                for j in range(self.width):
 
                     near = 0 # 80 is max
                     bit_counter = 0
@@ -94,8 +53,8 @@ class LifeMyGenerator:
                             
                             if ii < 0: continue
                             if jj < 0: continue
-                            if ii >= height: continue
-                            if jj >= width: continue
+                            if ii >= self.height: continue
+                            if jj >= self.width: continue
 
                             # print(bit_counter)
                             if (a[ii][jj] and bits[bit_counter - 1]):
@@ -115,30 +74,17 @@ class LifeMyGenerator:
 
             a = b
 
-            if (k >= skip_frames):
-                png_file = os.path.join(frame_dir, "frame_" + str(k) + ".png")
-                img.save(png_file)
-                png_files.append(png_file)
+            if (k >= frames2skip):
+                self.save_frame(img, k)
 
-        # append almost all (except first and last) reversed array to itself
-        last_idx = len(png_files) - 1
+        # make movie : append almost all (except first and last) reversed array to itself
+        last_idx = len(self.png_files) - 1
         for idx in range(last_idx - 1, 1, -1):
-            png_files.append(png_files[idx])
+            self.png_files.append(self.png_files[idx])
                                 
-        os.makedirs("static/" + str(uid), exist_ok=True)
-
-        frames = [Image.open(f) for f in png_files]
-        basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
-        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
-        frames[0].save(
-            gif_filename,
-            save_all=True,
-            append_images=frames[1:],
-            duration=100,
-            loop=0
-        )
-
-        return "/static/" + str(uid) + "/" + basename
+        filename = self.create_gif_file(uid, digest)
+        
+        return filename
 
 if __name__ == "__main__":
     generator = LifeMyGenerator()
