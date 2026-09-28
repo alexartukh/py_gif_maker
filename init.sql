@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS anno_users (
 `id` INT AUTO_INCREMENT PRIMARY KEY,
 `username` VARCHAR(255) NOT NULL,
@@ -25,4 +24,11 @@ CREATE TABLE IF NOT EXISTS anno_tasks (
 `md5_hash` CHAR(32) NOT NULL,
 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 `gif_filename` VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS anno_settings (
+`user_id` INT NOT NULL,
+`template` INT NOT NULL,
+`settings` TEXT,
+PRIMARY KEY (`user_id`, `template`)
 );

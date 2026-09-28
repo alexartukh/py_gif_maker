@@ -4,8 +4,8 @@ from gen_base import GifGeneratorBase
 
 class FGenerator(GifGeneratorBase):
 
-    def __init__(self, t):
-        super().__init__()
+    def __init__(self, t, textdata=""):
+        super().__init__(textdata)
         self.type = t
 
     def f(self, y, x):
@@ -61,6 +61,11 @@ class FGenerator(GifGeneratorBase):
         return filename
 
 if __name__ == "__main__":
-    generator = FGenerator(1)
+    settings = """
+        hex_color=#FF0000
+        hex_color_bg=#FFFFFF
+        hex_color_line=#FF00FF
+    """
+    generator = FGenerator(1, settings)
     text = "TESTING"
     generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)

@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 # shared code and fields for all generators
 class GifGeneratorBase:
 
-    def __init__(self):
+    def __init__(self, settings):
         self.hex_color = "#FF0000"
         self.hex_color_bg = "#000000"
         self.hex_color_line = "#FFFFFF"
@@ -17,8 +17,35 @@ class GifGeneratorBase:
         self.sz = 10
         self.png_files = []
 
-    def setup(self):
-        pass
+        # try to override default settings by data from 'settings'
+        print(settings)
+
+        for line in settings.split("\n"):
+            line = line.strip()
+            if line == "":
+                continue
+
+            # skip lines without "key=value" format
+            if "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+
+            # skip lines with an empty key or an empty value
+            if key == "" or value == "":
+                continue
+
+            if key == "hex_color":
+                self.hex_color = value
+                print("hex_color was replaced by " + value)
+            if key == "hex_color_bg":
+                self.hex_color_bg = value
+                print("hex_color_bg was replaced by " + value)
+            if key == "hex_color_line":
+                self.hex_color_line = value
+                print("hex_color_line was replaced by " + value)
 
     def init_matrix_50_50(self, a):
         for i in range(self.height):

@@ -31,10 +31,10 @@ APP_VERSION = "0.0.1"
 TTL_ADMIN_SESSION = 3600
 ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS = 300
 
-# def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
-#     while True:
-#         time.sleep(interval_seconds)
-#         admin_sessions.cleanup_expired()
+def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
+    while True:
+        time.sleep(interval_seconds)
+        admin_sessions.cleanup_expired()
 
 
 class Anno:
@@ -50,12 +50,12 @@ class Anno:
 
         # background thread that purges expired sessions periodically;
         # always on, including under the dev reloader
-        # self.cleanup_thread = threading.Thread(
-        #     target=run_periodic_admin_session_cleanup,
-        #     args=(self.admin_sessions, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
-        #     daemon=True
-        # )
-        # self.cleanup_thread.start()
+        self.cleanup_thread = threading.Thread(
+            target=run_periodic_admin_session_cleanup,
+            args=(self.admin_sessions, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
+            daemon=True
+        )
+        self.cleanup_thread.start()
 
         # template toolkit 
         self.jinja_env = Environment(
@@ -76,6 +76,7 @@ class Anno:
                 Rule("/admin_logout", endpoint="admin_logout"),
                 Rule("/admin_clear_cache", endpoint="admin_clear_cache"),
                 Rule("/admin_main", endpoint="admin_main"),
+                Rule("/admin_change_settings", endpoint="admin_change_settings"),
 
                 # Web Service
                 Rule("/g", endpoint="generate"),
@@ -138,6 +139,7 @@ class Anno:
 
         t = data.get("t") or "" # empty seed is correct seed as well 
         token = data.get("token") or None
+        ignore_cache = data.get("ignore_cache") or None
 
         # get template ID
         template = None
@@ -160,14 +162,20 @@ class Anno:
         md5_value = hashlib.md5(t.encode('utf-8')).digest()
         md5_value_hex = md5_value.hex()
 
+        all_db_settings = self.mysql.get_settings(u)
+
+        if all_db_settings is None:
+            all_db_settings = {}
+        settings = all_db_settings.get(template) or ""
+
         # create a generator in any case
         generator = None
         if template >= 1 and template <= 5:
-            generator = gen_f.FGenerator(template)
+            generator = gen_f.FGenerator(template, settings)
         elif template == 100:
-            generator = gen_life_test.LifeSimpleGenerator()        
+            generator = gen_life_test.LifeSimpleGenerator(settings)        
         elif template == 200:
-            generator = gen_life_my.LifeMyGenerator()
+            generator = gen_life_my.LifeMyGenerator(settings)
         else:
             return Response(
                 response=json.dumps({ "error": 1, "message": "unknown template value " + str(template)}),
@@ -175,8 +183,10 @@ class Anno:
             )
 
         # cache in action or run a new task
-        task = self.mysql.search_for_task(u, template, md5_value_hex)
-        # task = None # disable cache for testing
+        if ignore_cache is None:
+            task = self.mysql.search_for_task(u, template, md5_value_hex)
+        else:
+            task = None
 
         if task is None:
             print('Run a new task for a template ' + str(template))    
@@ -219,8 +229,8 @@ class Anno:
             )
 
         data = request.form
-        login = data.get("username") or None
-        password = data.get("password") or None
+        login = data.get("username")
+        password = data.get("password")
 
         u = self.mysql.get_user_by_login_and_password(login, password)
         if u is None:
@@ -274,6 +284,10 @@ class Anno:
 
         user = self.mysql.get_user_by_id(user_id)
         task_count = self.mysql.get_task_count_for_user(user_id)
+        all_settings = self.mysql.get_settings(user_id)
+
+        if all_settings is None:
+            all_settings = {}
 
         return self.render_template(
             "admin_main.html",
@@ -282,7 +296,24 @@ class Anno:
             welcome_message="Welcome " + user["username"] + " (" + user["email"] + ")",
             show_logout_link=True,
             tasks_for_this_user=task_count,
+            all_settings=all_settings, # attach the whole dictionary
         )
+
+    def on_admin_change_settings(self, request):
+        # check session first
+        session_id = request.cookies.get("session_id")
+        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+
+        if user_id is None:
+            return redirect("/admin")
+
+        data = request.form
+        template = data.get("template")
+        settings = data.get("settings")
+
+        self.mysql.save_settings(user_id, template, settings)
+
+        return redirect("/admin_main")
 
 # ---------------------------------------------------------------------
     # a tesing page will be displayed in any case, 

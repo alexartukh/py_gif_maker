@@ -16,12 +16,14 @@
       let login = jQuery("input[name=login]").val();
       let password = jQuery("input[name=password]").val();
       let template = jQuery("select[name=template]").val();
+      let ignore_cache = jQuery("input[name=ignore_cache]").prop('checked');
 
       let d = {
         t: t,
         login: login,
         password: password,
         template: template,
+        ignore_cache: ignore_cache,
         token: window.gifMakerAuthToken
       };
 
@@ -93,6 +95,15 @@
     </td>
     <td>
       {% include "list_of_templates.html" %}
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Ignore Cache:
+    </td>
+    <td>
+      <input type="checkbox" name="ignore_cache" value="1">
     </td>
   </tr>
 

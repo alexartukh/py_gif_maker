@@ -4,8 +4,8 @@ from gen_base import GifGeneratorBase
 
 class LifeSimpleGenerator(GifGeneratorBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, textdata=""):
+        super().__init__(textdata)
         self.type = 100
 
     def get_description(self):
@@ -69,6 +69,11 @@ class LifeSimpleGenerator(GifGeneratorBase):
         return filename
 
 if __name__ == "__main__":
-    generator = LifeSimpleGenerator()
+    settings = """
+        hex_color=#FF0000
+        hex_color_bg=#FFFFFF
+        hex_color_line=#FF00FF
+    """
+    generator = LifeSimpleGenerator(settings)
     text = "TESTING"
     generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)

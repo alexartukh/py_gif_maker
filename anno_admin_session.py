@@ -1,7 +1,6 @@
 import secrets
 from mysql.connector import Error
 
-
 class AdminSession:
     def __init__(self, mysql_connection, ttl_seconds=3600):
         self.connection = mysql_connection
@@ -26,10 +25,11 @@ class AdminSession:
 
     def get_session(self, session_id):
         try:
-            cursor = self.connection.cursor(dictionary=True)
+            cursor = self.connection.cursor(dictionary=True, buffered=True)
             cursor.execute(
                 "SELECT user_id FROM admin_sessions "
-                "WHERE id = %s AND expires_at > NOW()",
+                "WHERE id = %s AND expires_at > NOW() "
+                "LIMIT 1",
                 (session_id,)
             )
             row = cursor.fetchone()

@@ -107,3 +107,39 @@ class AnnoDB:
             return None
         finally:
             cursor.close()
+
+    def save_settings(self, user_id, template, settings):
+        try:
+            cursor = self.connection.cursor(dictionary=True, buffered=True)
+            cursor.execute(
+                "REPLACE INTO anno_settings (user_id, template, settings) "
+                "VALUES (%s, %s, %s) ",
+                (user_id, template, settings)
+            )
+            self.connection.commit()
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
+            return None
+        finally:
+            cursor.close()
+
+    def get_settings(self, user_id):
+        try:
+            cursor = self.connection.cursor(dictionary=True, buffered=True)
+            cursor.execute(
+                "SELECT template, settings FROM anno_settings "
+                "WHERE user_id = %s ",
+                (user_id, )
+            )
+            rows = cursor.fetchall()
+            result = {}
+            for row in rows:
+                template = row["template"]
+                settings = row["settings"]
+                result[template] = settings
+            return result
+        except Error as e:
+            print("!! MySQL error !! " + str(e))
+            return None
+        finally:
+            cursor.close()

@@ -4,38 +4,66 @@
 
 <h2>Admin</h2>
 
-<table>
+<!--
 
-    <tr>
-        <td>
-            {{ welcome_message }}
-        </td>
-        <td>
-            {{ tasks_for_this_user }} cached task(s)
-            &nbsp;|&nbsp;
-            <a href="/admin_clear_cache">
-                Clear cache for this user
-            </a>
-        </td>        
-    </tr>
+    {{ all_settings }}
 
-    <tr>
-        <td>
-            Select template:
-        </td>
-        <td>
-            {% include "list_of_templates.html" %}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Set properties:
-        </td>
-        <td>
-            
-        </td>
-    </tr>
+-->
 
-</table>
+<form method="POST" action="/admin_change_settings">
+    <input type="hidden" name="uid" value="{{uid}}">
+    <table>
+
+        <tr>
+            <td>
+                {{ welcome_message }}
+            </td>
+            <td>
+                {{ tasks_for_this_user }} cached task(s)
+                &nbsp;|&nbsp;
+                <a href="/admin_clear_cache">
+                    Clear cache for this user
+                </a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Select template:
+            </td>
+            <td>
+                {% include "list_of_templates.html" %}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Set properties:
+            </td>
+            <td>
+                <textarea name="settings"></textarea>
+                <br>
+                <input type="submit" value="Save">
+            </td>
+        </tr>
+
+    </table>
+</form>
+
+<script>
+    // all settings of this user : { "template id": "settings text", ... }
+    const allSettings = {{ all_settings | tojson }};
+    
+    function set_textarea_text(template_id) {
+        jQuery("textarea[name=settings]").val(allSettings[template_id] || '');
+    }
+    set_textarea_text(1); 
+
+    jQuery(function() {
+        jQuery("select[name=template]").change(function() {
+            let v = jQuery(this).val();
+            set_textarea_text(v);
+        })
+    })
+</script>
 
 {% endblock %}
