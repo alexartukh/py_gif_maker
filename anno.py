@@ -26,6 +26,7 @@ import anno_admin_session
 import gen_life_test
 import gen_life_my
 import gen_f
+import gen_base
 
 APP_VERSION = "0.0.1"
 TTL_ADMIN_SESSION = 3600
@@ -296,6 +297,7 @@ class Anno:
             welcome_message="Welcome " + user["username"] + " (" + user["email"] + ")",
             show_logout_link=True,
             tasks_for_this_user=task_count,
+            hint_for_settings=gen_base.GifGeneratorBase.get_hint_for_settings(),
             all_settings=all_settings, # attach the whole dictionary
         )
 

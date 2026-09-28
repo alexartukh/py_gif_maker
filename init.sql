@@ -18,12 +18,12 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 );
 
 CREATE TABLE IF NOT EXISTS anno_tasks (
-`id` INT AUTO_INCREMENT PRIMARY KEY,
 `user_id` INT NOT NULL,
 `template` INT NOT NULL,
 `md5_hash` CHAR(32) NOT NULL,
 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-`gif_filename` VARCHAR(255) NOT NULL
+`gif_filename` VARCHAR(255) NOT NULL,
+PRIMARY KEY (`user_id`, `template`, `md5_hash`)
 );
 
 CREATE TABLE IF NOT EXISTS anno_settings (

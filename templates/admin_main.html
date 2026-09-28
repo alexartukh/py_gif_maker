@@ -40,8 +40,10 @@
                 Set properties:
             </td>
             <td>
-                <textarea name="settings"></textarea>
-                <br>
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <textarea name="settings"></textarea>
+                    <div>{{ hint_for_settings | safe }}</div>
+                </div>
                 <input type="submit" value="Save">
             </td>
         </tr>

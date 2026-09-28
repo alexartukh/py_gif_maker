@@ -18,8 +18,6 @@ class GifGeneratorBase:
         self.png_files = []
 
         # try to override default settings by data from 'settings'
-        print(settings)
-
         for line in settings.split("\n"):
             line = line.strip()
             if line == "":
@@ -46,6 +44,32 @@ class GifGeneratorBase:
             if key == "hex_color_line":
                 self.hex_color_line = value
                 print("hex_color_line was replaced by " + value)
+            if key == "sz":
+                try:
+                    sz = int(value)
+                except ValueError:
+                    print("sz is not an integer: " + value)
+                    continue
+
+                # a cell smaller than 2 pixels can not be drawn inside the grid
+                if sz < 2:
+                    print("sz is too small: " + value)
+                    continue
+
+                self.sz = sz
+                print("sz was replaced by " + value)
+
+    @staticmethod
+    def get_hint_for_settings():
+        a = [
+            "It is possible to override such settings as:",
+            "- hex_color",
+            "- hex_color_bg",
+            "- hex_color_line",
+            "- sz",
+            "Everything else will be ignored",
+        ]
+        return "<br>".join(a)
 
     def init_matrix_50_50(self, a):
         for i in range(self.height):

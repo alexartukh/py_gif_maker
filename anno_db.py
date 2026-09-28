@@ -46,7 +46,7 @@ class AnnoDB:
         try:
             cursor = self.connection.cursor(dictionary=True, buffered=True)
             cursor.execute(
-                "INSERT INTO anno_tasks (user_id, template, md5_hash, gif_filename) "
+                "REPLACE INTO anno_tasks (user_id, template, md5_hash, gif_filename) "
                 "VALUES (%s, %s, %s, %s) ",
                 (user_id, template, md5_hash, gif_filename)
             )
