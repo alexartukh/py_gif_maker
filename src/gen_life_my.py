@@ -1,5 +1,6 @@
 import hashlib
 import random
+import sys
 
 from gen_base import GifGeneratorBase
 
@@ -87,11 +88,18 @@ class LifeMyGenerator(GifGeneratorBase):
         return filename
 
 if __name__ == "__main__":
+
+    if len(sys.argv) >= 2:
+        text = sys.argv[1]
+    else:
+        text = "TESTING"
+
     settings = """
         hex_color=#FF0000
         hex_color_bg=#FFFFFF
         hex_color_line=#FF00FF
     """
+
     generator = LifeMyGenerator(settings)
-    text = "TESTING"
+
     generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)

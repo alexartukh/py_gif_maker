@@ -1,4 +1,5 @@
 import hashlib
+import sys
 
 from gen_base import GifGeneratorBase
 
@@ -61,11 +62,27 @@ class FGenerator(GifGeneratorBase):
         return filename
 
 if __name__ == "__main__":
+
+    if len(sys.argv) >= 2:
+        text = sys.argv[1]
+    else:
+        text = "TESTING"
+
+    if len(sys.argv) >= 3:
+        try:
+            type = int(sys.argv[2])
+        except ValueError:
+            print("Argument 2 must be an integer: " + sys.argv[2])
+            sys.exit(1)
+    else:
+        type = 1
+
     settings = """
         hex_color=#FF0000
         hex_color_bg=#FFFFFF
         hex_color_line=#FF00FF
     """
-    generator = FGenerator(1, settings)
-    text = "TESTING"
+
+    generator = FGenerator(type, settings)
+    
     generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)
