@@ -1,6 +1,8 @@
 import random
 import os
 import time
+import uuid
+import shutil
 from PIL import Image, ImageDraw
 
 # project root : one level above the "src" folder
@@ -19,6 +21,10 @@ class GifGeneratorBase:
         self.height = 50
         self.sz = 10
         self.png_files = []
+
+        # unique folder for frames of this generator instance,
+        # so parallel requests do not overwrite frames of each other
+        self.frame_dir = os.path.join(PROJECT_DIR, "frames", str(uuid.uuid4()))
 
         # try to override default settings by data from 'settings'
         for line in settings.split("\n"):
@@ -114,8 +120,8 @@ class GifGeneratorBase:
         return img
 
     def save_frame(self, img, frame_number):
-        png_file = PROJECT_DIR + "/frames/frame_" + str(frame_number) + ".png"
-        os.makedirs(PROJECT_DIR + "/frames", exist_ok=True)
+        os.makedirs(self.frame_dir, exist_ok=True)
+        png_file = os.path.join(self.frame_dir, "frame_" + str(frame_number) + ".png")
         img.save(png_file)
         self.png_files.append(png_file)
 
@@ -131,5 +137,13 @@ class GifGeneratorBase:
             duration=100,
             loop=0
         )
+
+        # close frame files first : on Windows an open file can not be deleted
+        for frame in frames:
+            frame.close()
+
+        # frames are not needed after the GIF is built
+        shutil.rmtree(self.frame_dir, ignore_errors=True)
+
         return "/static/" + str(uid) + "/" + basename
         

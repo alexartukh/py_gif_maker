@@ -13,9 +13,8 @@ from werkzeug.routing import Rule
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
-# other modules
+# my modules
 import anno_db
-import anno_admin_session
 import anno_test_pages
 import anno_admin_pages
 import anno_web_service
@@ -27,11 +26,12 @@ ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS = 300
 # get dir from dir
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
+def run_periodic_admin_session_cleanup(mysql, interval_seconds):
     while True:
         time.sleep(interval_seconds)
-        admin_sessions.cleanup_expired()
+        mysql.cleanup_expired_sessions()
 
+# классы, которые наследует Anno реализуют методы для 3 групп эндпоинтов из self.url_map 
 class Anno(
     anno_test_pages.AnnoTestPages,
     anno_admin_pages.AnnoAdminPages,
@@ -39,19 +39,14 @@ class Anno(
 ):
     def __init__(self):
 
-        # mysql access
-        self.mysql = anno_db.AnnoDB()
-
-        # admin sessions (MySQL-backed, table: admin_sessions)
-        self.admin_sessions = anno_admin_session.AdminSession(
-            self.mysql.connection, ttl_seconds=TTL_ADMIN_SESSION
-        )
+        # mysql access, including admin sessions (table: admin_sessions)
+        self.mysql = anno_db.AnnoDB(session_ttl_seconds=TTL_ADMIN_SESSION)
 
         # background thread that purges expired sessions periodically;
         # always on, including under the dev reloader
         self.cleanup_thread = threading.Thread(
             target=run_periodic_admin_session_cleanup,
-            args=(self.admin_sessions, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
+            args=(self.mysql, ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS),
             daemon=True
         )
         self.cleanup_thread.start()

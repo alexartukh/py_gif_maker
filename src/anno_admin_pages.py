@@ -15,7 +15,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # admin pages : login, logout, main page, settings, cache cleanup
 # it is a mixin for the Anno class, so "self" is the Anno object
-# and self.mysql, self.admin_sessions, self.render_template are available here
+# and self.mysql, self.render_template are available here
 class AnnoAdminPages:
     def on_admin_submit_password(self, request):
         if request.method != "POST":
@@ -37,7 +37,7 @@ class AnnoAdminPages:
                 message="Wrong login or password"
             )
 
-        session_id = self.admin_sessions.create_session(u['id'])
+        session_id = self.mysql.create_session(u['id'])
         if session_id is None:
             return self.render_template(
                 "admin_login.html",
@@ -49,7 +49,7 @@ class AnnoAdminPages:
         response.set_cookie(
             "session_id",
             session_id,
-            max_age=self.admin_sessions.ttl,
+            max_age=self.mysql.session_ttl,
             httponly=True,
             samesite="Strict"
         )
@@ -57,7 +57,7 @@ class AnnoAdminPages:
 
     def on_admin_logout(self, request):
         session_id = request.cookies.get("session_id")
-        self.admin_sessions.destroy_session(session_id)
+        self.mysql.destroy_session(session_id)
         return redirect("/admin")
 
     def on_admin_login(self, request):
@@ -66,7 +66,7 @@ class AnnoAdminPages:
     def on_admin_clear_cache(self, request):
         # check session first
         session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+        user_id = self.mysql.get_session(session_id) if session_id else None
 
         if user_id is None:
             return redirect("/admin")
@@ -82,7 +82,7 @@ class AnnoAdminPages:
     def on_admin_main(self, request):
         # check session first
         session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+        user_id = self.mysql.get_session(session_id) if session_id else None
 
         if user_id is None:
             return redirect("/admin")
@@ -107,7 +107,7 @@ class AnnoAdminPages:
     def on_admin_change_settings(self, request):
         # check session first
         session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
+        user_id = self.mysql.get_session(session_id) if session_id else None
 
         if user_id is None:
             return redirect("/admin")
