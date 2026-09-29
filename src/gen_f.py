@@ -6,8 +6,17 @@ from gen_base import GifGeneratorBase
 class FGenerator(GifGeneratorBase):
 
     def __init__(self, t, textdata=""):
+
+        try:
+            generator_type = int(t)
+        except (TypeError, ValueError):
+            raise ValueError("FGenerator type must be an integer: " + str(t))
+
+        if generator_type < 1 or generator_type > 5:
+            raise ValueError("unknown FGenerator type: " + str(generator_type))
+
         super().__init__(textdata)
-        self.type = t
+        self.type = generator_type
 
     def f(self, y, x):
         if self.type == 1:
@@ -69,13 +78,9 @@ if __name__ == "__main__":
         text = "TESTING"
 
     if len(sys.argv) >= 3:
-        try:
-            type = int(sys.argv[2])
-        except ValueError:
-            print("Argument 2 must be an integer: " + sys.argv[2])
-            sys.exit(1)
+        type = sys.argv[2]
     else:
-        type = 1
+        type = "1"
 
     settings = """
         hex_color=#FF0000

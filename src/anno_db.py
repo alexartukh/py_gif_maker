@@ -114,7 +114,7 @@ class AnnoDB:
         try:
             cursor = self.connection.cursor(dictionary=True, buffered=True)
             cursor.execute(
-                "SELECT COUNT(id) AS ctr "
+                "SELECT COUNT(*) AS ctr "
                 "FROM anno_tasks "
                 "WHERE user_id = %s ",
                 (user_id, )

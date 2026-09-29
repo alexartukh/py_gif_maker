@@ -1,8 +1,6 @@
 import os
-import json
 import time
 import threading
-import shutil
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -14,17 +12,14 @@ from werkzeug.routing import Map
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
-from werkzeug.utils import redirect
 
 # other modules
 import anno_db
 import anno_admin_session
+import anno_test_pages
+import anno_admin_pages
 import anno_web_service
 
-# generators
-import gen_base
-
-APP_VERSION = "0.0.1"
 TTL_ADMIN_SESSION = 3600
 ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS = 300
 
@@ -37,9 +32,12 @@ def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
         time.sleep(interval_seconds)
         admin_sessions.cleanup_expired()
 
-
-class Anno(anno_web_service.AnnoWebService):
-    def __init__(self, config):
+class Anno(
+    anno_test_pages.AnnoTestPages,
+    anno_admin_pages.AnnoAdminPages,
+    anno_web_service.AnnoWebService,
+):
+    def __init__(self):
 
         # mysql access
         self.mysql = anno_db.AnnoDB()
@@ -87,150 +85,6 @@ class Anno(anno_web_service.AnnoWebService):
 
 # ---------------------------------------------------------------------
 
-    def on_admin_submit_password(self, request):
-        if request.method != "POST":
-            return Response(
-                response=json.dumps({"error": 1, "message": "POST required"}),
-                mimetype="application/json",
-                status=405
-            )
-
-        data = request.form
-        login = data.get("username")
-        password = data.get("password")
-
-        u = self.mysql.get_user_by_login_and_password(login, password)
-        if u is None:
-            return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Wrong login or password")
-
-        session_id = self.admin_sessions.create_session(u['id'])
-        if session_id is None:
-            return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Unable to create a session record")
-
-        response = redirect("/admin_main")
-        response.set_cookie(
-            "session_id",
-            session_id,
-            max_age=TTL_ADMIN_SESSION,
-            httponly=True,
-            samesite="Strict"
-        )
-        return response
-
-    def on_admin_logout(self, request):
-        session_id = request.cookies.get("session_id")
-        self.admin_sessions.destroy_session(session_id)
-        return redirect("/admin")
-
-    def on_admin_login(self, request):
-        return self.render_template("admin_login.html", version=APP_VERSION, timestamp=time.time(), message="Enter login and password")
-
-    def on_admin_clear_cache(self, request):
-        # check session first
-        session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
-
-        if user_id is None:
-            return redirect("/admin")
-
-        self.mysql.clear_cache_for_user(user_id)
-        shutil.rmtree(
-            os.path.join(PROJECT_DIR, "static", str(user_id)),
-            ignore_errors=True
-        )
-        
-        return redirect("/admin_main")
-
-    def on_admin_main(self, request):
-        # check session first
-        session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
-
-        if user_id is None:
-            return redirect("/admin")
-
-        user = self.mysql.get_user_by_id(user_id)
-        task_count = self.mysql.get_task_count_for_user(user_id)
-        all_settings = self.mysql.get_settings(user_id)
-
-        if all_settings is None:
-            all_settings = {}
-
-        return self.render_template(
-            "admin_main.html",
-            version=APP_VERSION,
-            timestamp=time.time(),
-            welcome_message="Welcome " + user["username"] + " (" + user["email"] + ")",
-            show_logout_link=True,
-            tasks_for_this_user=task_count,
-            hint_for_settings=gen_base.GifGeneratorBase.get_hint_for_settings(),
-            all_settings=all_settings, # attach the whole dictionary
-        )
-
-    def on_admin_change_settings(self, request):
-        # check session first
-        session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
-
-        if user_id is None:
-            return redirect("/admin")
-
-        data = request.form
-        template = data.get("template")
-        settings = data.get("settings")
-
-        self.mysql.save_settings(user_id, template, settings)
-
-        return redirect("/admin_main")
-
-# ---------------------------------------------------------------------
-    # a tesing page will be displayed in any case, 
-    # but if a user has a logged in session, his login and password will be used 
-
-    def on_testing_post(self, request):
-        session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
-
-        # this is a default service user for testing
-        login = "test"
-        password = "123"
-
-        if user_id is not None:
-            user = self.mysql.get_user_by_id(user_id)
-            login = user["username"]
-            password = user["password"]
-        
-        return self.render_template(
-            "testing_post.html",
-            version=APP_VERSION,
-            timestamp=time.time(),
-            test_login=login,
-            test_password=password,
-        )
-
-    def on_testing_get(self, request):
-        session_id = request.cookies.get("session_id")
-        user_id = self.admin_sessions.get_session(session_id) if session_id else None
-
-        # this is a default service user for testing
-        login = "test"
-        password = "123"
-
-        if user_id is not None:
-            user = self.mysql.get_user_by_id(user_id)
-            login = user["username"]
-            password = user["password"]
-            
-        return self.render_template(
-            "testing_get.html",
-            version=APP_VERSION,
-            timestamp=time.time(),
-            test_login=login,
-            test_password=password,
-        )
-
-# ---------------------------------------------------------------------
-
     def error_404(self):
         response = self.render_template("404.html") 
         response.status_code = 404
@@ -259,15 +113,14 @@ class Anno(anno_web_service.AnnoWebService):
         return self.wsgi_app(environ, start_response)
 
 
-def create_app(with_static=True):
-    app = Anno({})
-    if with_static:
-        app.wsgi_app = SharedDataMiddleware(
-            app.wsgi_app,
-            {
-                "/static": os.path.join(PROJECT_DIR, "static"),
-            }
-        )
+def create_app():
+    app = Anno()
+    app.wsgi_app = SharedDataMiddleware(
+        app.wsgi_app,
+        {
+            "/static": os.path.join(PROJECT_DIR, "static"),
+        }
+    )
     return app
 
 

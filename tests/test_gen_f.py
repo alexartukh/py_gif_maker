@@ -49,5 +49,23 @@ class TestFGenerator(unittest.TestCase):
     def test_make_gif_type_2(self):
         self.check_make_gif(2)
 
+    def test_make_gif_type_3(self):
+        self.check_make_gif(3)
+
+    def test_make_gif_type_4(self):
+        self.check_make_gif(4)
+
+    def test_make_gif_type_5(self):
+        self.check_make_gif(5)
+
+    # unknown type : constructor must raise ValueError
+    def test_make_gif_type_99(self):
+        with self.assertRaises(ValueError):
+            self.check_make_gif(99)
+
+    def test_make_gif_type_qq(self):
+        with self.assertRaises(ValueError):
+            self.check_make_gif('qq')
+
 if __name__ == "__main__":
     unittest.main()
