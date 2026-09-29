@@ -3,6 +3,9 @@ import os
 import time
 from PIL import Image, ImageDraw
 
+# project root : one level above the "src" folder
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # shared code and fields for all generators
 class GifGeneratorBase:
 
@@ -111,16 +114,16 @@ class GifGeneratorBase:
         return img
 
     def save_frame(self, img, frame_number):
-        png_file = os.path.dirname(__file__) + "/frames/frame_" + str(frame_number) + ".png"
-        os.makedirs(os.path.dirname(__file__) + "/frames", exist_ok=True)
+        png_file = PROJECT_DIR + "/frames/frame_" + str(frame_number) + ".png"
+        os.makedirs(PROJECT_DIR + "/frames", exist_ok=True)
         img.save(png_file)
         self.png_files.append(png_file)
 
     def create_gif_file(self, uid, digest):
-        os.makedirs(os.path.dirname(__file__) + "/static/" + str(uid), exist_ok=True)
-        frames = [Image.open(f) for f in self.png_files]
+        os.makedirs(PROJECT_DIR + "/static/" + str(uid), exist_ok=True)
+        frames = [ Image.open(f) for f in self.png_files ]
         basename = str(int(time.time())) + "_" + str(self.type) + "_" + digest.hex() + ".gif"
-        gif_filename = os.path.dirname(__file__) + "/static/" + str(uid) + "/" + basename
+        gif_filename = PROJECT_DIR + "/static/" + str(uid) + "/" + basename
         frames[0].save(
             gif_filename,
             save_all=True,

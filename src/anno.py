@@ -2,7 +2,6 @@ import os
 import json
 import time
 import threading
-import hashlib
 import shutil
 
 from jinja2 import Environment
@@ -19,18 +18,19 @@ from werkzeug.utils import redirect
 
 # other modules
 import anno_db
-import anno_auth
 import anno_admin_session
+import anno_web_service
 
 # generators
-import gen_life_test
-import gen_life_my
-import gen_f
 import gen_base
 
 APP_VERSION = "0.0.1"
 TTL_ADMIN_SESSION = 3600
 ADMIN_SESSION_CLEANUP_INTERVAL_SECONDS = 300
+
+# project root : one level above the "src" folder
+# get dir from dir
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
     while True:
@@ -38,7 +38,7 @@ def run_periodic_admin_session_cleanup(admin_sessions, interval_seconds):
         admin_sessions.cleanup_expired()
 
 
-class Anno:
+class Anno(anno_web_service.AnnoWebService):
     def __init__(self, config):
 
         # mysql access
@@ -60,7 +60,7 @@ class Anno:
 
         # template toolkit 
         self.jinja_env = Environment(
-            loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "templates")),
+            loader=FileSystemLoader(os.path.join(PROJECT_DIR, "templates")),
             autoescape=True
         )
 
@@ -83,140 +83,6 @@ class Anno:
                 Rule("/g", endpoint="generate"),
                 Rule("/login", endpoint="login"),
             ]
-        )
-
-# ---------------------------------------------------------------------
-
-    def on_login(self, request):
-        if request.method != "POST":
-            return Response(
-                response=json.dumps({"error": 1, "message": "POST required"}),
-                mimetype="application/json",
-                status=405
-            )
-
-        data = request.json
-        login = data.get("login") or None
-        password = data.get("password") or None
-
-        if not login or not password:
-            return Response(
-                response=json.dumps({"error": 1, "message": "no login or password"}),
-                mimetype="application/json"
-            )
-
-        u = self.mysql.get_user_by_login_and_password(login, password)
-        if not u:
-            return Response(
-                response=json.dumps({"error": 1, "message": "wrong login or password"}),
-                mimetype="application/json"
-            )
-
-        token = anno_auth.make_token(u["id"])
-        return Response(
-            response=json.dumps({"error": 0, "token": token}),
-            mimetype="application/json"
-        )
-
-# ---------------------------------------------------------------------
-
-    def on_generate(self, request):
-
-        # 2 request me
-        data = None
-        if request.method == "GET":
-            # in = normal args, out = GIF file
-            json_response = False
-            data = request.args  
-        elif request.method == "POST":
-            # in = JSON, out = JSON
-            json_response = True
-            data = request.json
-        else:
-            return Response(
-                response=json.dumps({"error": 1, "message": "unsupported request method", "value": request.method}),
-                mimetype="application/json"
-            )
-
-        t = data.get("t") or "" # empty seed is correct seed as well 
-        token = data.get("token") or None
-        ignore_cache = data.get("ignore_cache") or None
-
-        # get template ID
-        template = None
-        try:
-            template = int(data.get("template"))
-        except (TypeError, ValueError):
-            return Response(
-                response=json.dumps({"error": 1, "message": "template must be an integer", "value": template}),
-                mimetype="application/json"
-            )
-
-        u = anno_auth.verify_token(token);
-        if not u:   
-            return Response(
-                response=json.dumps({ "error": 1, "message": "wrong auth token"}),
-                mimetype="application/json"
-            )
-
-        result = None
-        md5_value = hashlib.md5(t.encode('utf-8')).digest()
-        md5_value_hex = md5_value.hex()
-
-        all_db_settings = self.mysql.get_settings(u)
-
-        if all_db_settings is None:
-            all_db_settings = {}
-        settings = all_db_settings.get(template) or ""
-
-        # create a generator in any case
-        generator = None
-        if template >= 1 and template <= 5:
-            generator = gen_f.FGenerator(template, settings)
-        elif template == 100:
-            generator = gen_life_test.LifeSimpleGenerator(settings)        
-        elif template == 200:
-            generator = gen_life_my.LifeMyGenerator(settings)
-        else:
-            return Response(
-                response=json.dumps({ "error": 1, "message": "unknown template value " + str(template)}),
-                mimetype="application/json"
-            )
-
-        # cache in action or run a new task
-        if ignore_cache is None:
-            task = self.mysql.search_for_task(u, template, md5_value_hex)
-        else:
-            task = None
-
-        if task is None:
-            print('Run a new task for a template ' + str(template))    
-            result = generator.make_gif(md5_value, u)
-
-            # save task record in the DB
-            self.mysql.create_task_record(u, template, md5_value_hex, result)
-        else:
-            # cache in action
-            result = task
-            print('Cache in action : ' + result)
-
-        # POST result : send JSON with a URL inside as a response
-        if json_response:  
-            result_data = {
-                "result": "http://" + request.host + result,
-                "t": t,
-                "template": template,
-                "description": generator.get_description(),
-                "md5_value": md5_value_hex,
-            }
-            return Response(response=json.dumps(result_data), mimetype="application/json")
-
-        # GET result : send a file as a response
-        with open('.' + result, "rb") as f:
-            gif_data = f.read()
-        return Response(
-            response=gif_data,
-            mimetype="image/gif"
         )
 
 # ---------------------------------------------------------------------
@@ -269,7 +135,7 @@ class Anno:
 
         self.mysql.clear_cache_for_user(user_id)
         shutil.rmtree(
-            os.path.join(os.path.dirname(__file__), "static", str(user_id)),
+            os.path.join(PROJECT_DIR, "static", str(user_id)),
             ignore_errors=True
         )
         
@@ -399,7 +265,7 @@ def create_app(with_static=True):
         app.wsgi_app = SharedDataMiddleware(
             app.wsgi_app,
             {
-                "/static": os.path.join(os.path.dirname(__file__), "static"),
+                "/static": os.path.join(PROJECT_DIR, "static"),
             }
         )
     return app

@@ -1,13 +1,32 @@
+import os
+
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
+
+# project root : one level above the "src" folder
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class AnnoDB:
     def __init__(self):
+        # read DB access settings from .env in the project root
+        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
+
+        host = os.getenv("DB_HOST", "localhost")
+        port = os.getenv("DB_PORT", "3306")
+        user = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD", "")
+        database = os.getenv("DB_NAME")
+
+        if not user or not database:
+            raise RuntimeError("DB_USER and DB_NAME must be set in .env (see .env.example)")
+
         self.connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="anno"
+            host=host,
+            port=int(port),
+            user=user,
+            password=password,
+            database=database
         )
 
     def get_user_by_login_and_password(self, login, password):
