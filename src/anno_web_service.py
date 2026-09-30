@@ -10,15 +10,29 @@ import anno_auth
 import gen_life_test
 import gen_life_my
 import gen_f
+import gen_ant
 
 # project root : one level above the "src" folder
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # web service endpoints : /login and /g
 # it is a mixin for the Anno class, so "self" is the Anno object
 # and self.mysql is available here
 class AnnoWebService:
+    
+    # a new generator should be added here
+    def _create_generator(self, template, settings):
+        generator = None
+        if template >= 1 and template <= 5:
+            generator = gen_f.FGenerator(template, settings)
+        elif template == 100:
+            generator = gen_life_test.LifeSimpleGenerator(settings)        
+        elif template == 200:
+            generator = gen_life_my.LifeMyGenerator(settings)
+        elif template == 300:
+            generator = gen_ant.AntGenerator(settings)
+        return generator
+
     def on_login(self, request):
         if request.method != "POST":
             return Response(
@@ -99,15 +113,8 @@ class AnnoWebService:
             all_db_settings = {}
         settings = all_db_settings.get(template) or ""
 
-        # create a generator in any case
-        generator = None
-        if template >= 1 and template <= 5:
-            generator = gen_f.FGenerator(template, settings)
-        elif template == 100:
-            generator = gen_life_test.LifeSimpleGenerator(settings)        
-        elif template == 200:
-            generator = gen_life_my.LifeMyGenerator(settings)
-        else:
+        generator = self._create_generator(template, settings)
+        if generator is None:
             return Response(
                 response=json.dumps({ "error": 1, "message": "unknown template value " + str(template)}),
                 mimetype="application/json"
