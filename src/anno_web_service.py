@@ -4,7 +4,7 @@ import hashlib
 
 from werkzeug.wrappers import Response
 
-import anno_auth
+import anno_web_service_auth
 
 # generators
 import gen_life_test
@@ -58,7 +58,7 @@ class AnnoWebService:
                 mimetype="application/json"
             )
 
-        token = anno_auth.make_token(u["id"])
+        token = anno_web_service_auth.make_token(u["id"])
         return Response(
             response=json.dumps({"error": 0, "token": token}),
             mimetype="application/json"
@@ -96,7 +96,7 @@ class AnnoWebService:
                 mimetype="application/json"
             )
 
-        u = anno_auth.verify_token(token);
+        u = anno_web_service_auth.verify_token(token);
         if not u:   
             return Response(
                 response=json.dumps({ "error": 1, "message": "wrong auth token"}),

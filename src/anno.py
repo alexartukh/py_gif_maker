@@ -12,8 +12,8 @@ from werkzeug.routing import Map
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
+from werkzeug.serving import run_simple
 
-# my modules
 import anno_db
 import anno_test_pages
 import anno_admin_pages
@@ -108,7 +108,7 @@ class Anno(
         return self.wsgi_app(environ, start_response)
 
 
-def create_app():
+if __name__ == "__main__":    
     app = Anno()
     app.wsgi_app = SharedDataMiddleware(
         app.wsgi_app,
@@ -116,12 +116,5 @@ def create_app():
             "/static": os.path.join(PROJECT_DIR, "static"),
         }
     )
-    return app
-
-
-if __name__ == "__main__":
-    from werkzeug.serving import run_simple
-    app = create_app()
-    # run_simple("127.0.0.1", 5555, app, use_debugger=True, use_reloader=True)
     run_simple("0.0.0.0", 5555, app, use_debugger=True, use_reloader=True)
 
