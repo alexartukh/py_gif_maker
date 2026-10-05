@@ -1,0 +1,178 @@
+<!doctype html>
+
+<head>
+    <title>Testing POST requests from a static page</title>
+    <script src="https://code.jquery.com/jquery-4.0.0.js"
+        integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+    <script>
+        function get_auth_token(login, password) {
+            jQuery('#gif_maker_login').text(login);
+            jQuery('#gif_maker_password').text(password);
+
+            // URL is full and absolute (not short /login) 
+            jQuery.ajax({
+                url: "http://localhost:5555/login",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    login: login,
+                    password: password
+                }),
+                success: function (response) {
+                    if (response.error) {
+                        console.error("GIF MAKER - Login failed:", response.message);
+                        return;
+                    }
+                    var token = response.token;
+                    console.log("GIF MAKER - Got token:", token);
+
+                    // сохраняем как глобальную переменную, чтобы использовать дальше на странице
+                    window.gifMakerAuthToken = token;
+                    sessionStorage.setItem("authToken", token);
+                },
+                error: function (xhr) {
+                    console.error("GIF MAKER - Request failed:", xhr.status, xhr.responseText);
+                }
+            });
+        }
+
+        jQuery(function () {
+
+            let login = "test";
+            let password = "123";
+
+            get_auth_token(login, password);
+
+            jQuery("#submit_button").click(function () {
+
+                let t = jQuery("input[name=t]").val();
+                let template = jQuery("select[name=template]").val();
+                let ignore_cache = jQuery("input[name=ignore_cache]").prop('checked');
+
+                let d = {
+                    t: t,
+                    login: login,
+                    password: password,
+                    template: template,
+                    ignore_cache: ignore_cache,
+                    token: window.gifMakerAuthToken
+                };
+
+                console.log("Sending request");
+                console.log(d);
+
+                jQuery.ajax({
+                    url: 'http://localhost:5555/g',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(d),
+                })
+                    .done(function (data) {
+                        jQuery('#result_text').html('');
+                        jQuery('#result_image').attr('src', '');
+
+                        console.log("Receiving response");
+                        console.log(data);
+
+                        // print JSON response in any case
+                        jQuery('#result_text').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>')
+
+                        if (!data.error) {
+                            jQuery('#result_image').attr('src', data.result);
+
+                            // use black color font for a normal response
+                            jQuery('#result_text').css('color', 'black');
+                        }
+                        else {
+                            // use red color font for an error response
+                            jQuery('#result_text').css('color', 'red');
+                        }
+                    });
+            });
+
+        });
+    </script>
+</head>
+
+<body>
+    <h2>Testing POST requests from a static page</h2>
+
+    <table border="1">
+        <tr>
+            <td>
+                Seed:
+            </td>
+            <td>
+                <input type="text" name="t" value="">
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Login:
+            </td>
+            <td>
+                test
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Password:
+            </td>
+            <td>
+                123
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Template:
+            </td>
+            <td>
+                <select id="template" name="template">
+                    <option value="100" selected>Boolean Function F(x,y)</option>
+                    <option value="200">Fuzzy LIFE</option>
+                    <option value="300">Macro Cells</option>
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Ignore Cache:
+            </td>
+            <td>
+                <input type="checkbox" name="ignore_cache" value="1">
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <input type="submit" id="submit_button" value="Generate">
+            </td>
+            <td>
+            </td>
+        </tr>
+    </table>
+
+    <h2>Result</h2>
+
+    <table border="1">
+        <tr>
+            <td>
+                Result Raw:
+            </td>
+            <td id="result_text">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Result GIF:
+            </td>
+            <td>
+                <img src="" id="result_image">
+            </td>
+        </tr>
+    </table>
+</body>

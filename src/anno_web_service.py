@@ -123,6 +123,9 @@ class AnnoWebService:
         # cache in action or run a new task
         if ignore_cache is None:
             task = self.mysql.search_for_task(u, template, md5_value_hex)
+            # the cached file must still exist in the static folder
+            if task is not None and not os.path.isfile(PROJECT_DIR + task):
+                task = None
         else:
             task = None
 
