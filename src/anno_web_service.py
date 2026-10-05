@@ -6,11 +6,10 @@ from werkzeug.wrappers import Response
 
 import anno_web_service_auth
 
-# generators
-import gen_life_test
-import gen_life_my
+# import gen_life_original
+import gen_life_fuzzy
 import gen_f
-import gen_ant
+import gen_3
 
 # project root : one level above the "src" folder
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,14 +22,15 @@ class AnnoWebService:
     # a new generator should be added here
     def _create_generator(self, template, settings):
         generator = None
-        if template >= 1 and template <= 5:
-            generator = gen_f.FGenerator(template, settings)
-        elif template == 100:
-            generator = gen_life_test.LifeSimpleGenerator(settings)        
+        if template == 100:
+            generator = gen_f.FGenerator(settings)
         elif template == 200:
-            generator = gen_life_my.LifeMyGenerator(settings)
+            generator = gen_life_fuzzy.FuzzyLifeGenerator(settings)
         elif template == 300:
-            generator = gen_ant.AntGenerator(settings)
+            generator = gen_3.ThirdGenerator(settings)
+        else:
+            raise ValueError("Unknown generator type")
+        
         return generator
 
     def on_login(self, request):

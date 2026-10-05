@@ -12,6 +12,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class GifGeneratorBase:
 
     def __init__(self, settings):
+        # default colors
         self.hex_color = "#FF0000"
         self.hex_color_bg = "#000000"
         self.hex_color_line = "#FFFFFF"
@@ -21,6 +22,7 @@ class GifGeneratorBase:
         self.height = 50
         self.sz = 10
         self.png_files = []
+        self.random_colors = False
 
         # unique folder for frames of this generator instance,
         # so parallel requests do not overwrite frames of each other
@@ -67,6 +69,9 @@ class GifGeneratorBase:
 
                 self.sz = sz
                 print("sz was replaced by " + value)
+            if key == "random_colors":
+                print("use color randomizer")
+                self.random_colors = True
 
     @staticmethod
     def get_hint_for_settings():
@@ -76,6 +81,7 @@ class GifGeneratorBase:
             "- hex_color_bg",
             "- hex_color_line",
             "- sz",
+            "- random_colors",
             "Everything else will be ignored",
         ]
         return "<br>".join(a)
@@ -97,6 +103,14 @@ class GifGeneratorBase:
             for j in range(self.width):
                 line_a.append(0)
             a.append(line_a)
+
+    def use_random_colors(self, digest):
+        c1, c2, c3 = digest[0], digest[1], digest[2]
+        c4, c5, c6 = digest[3], digest[4], digest[5]
+        # each byte (0..255) becomes 2 hex digits : R, G, B
+        self.hex_color = "#{:02X}{:02X}{:02X}".format(c1, c2, c3)
+        self.hex_color_bg = "#{:02X}{:02X}{:02X}".format(255 - c1, 255 - c2, 255 - c3)
+        self.hex_color_line = "#{:02X}{:02X}{:02X}".format(c4, c5, c6)
 
     def draw_frame(self, a):
         img = Image.new("RGB", (self.width * self.sz + 1, self.height * self.sz + 1), color=self.hex_color_bg)

@@ -58,7 +58,7 @@
     function set_textarea_text(template_id) {
         jQuery("textarea[name=settings]").val(allSettings[template_id] || '');
     }
-    set_textarea_text(1); 
+    set_textarea_text( jQuery("select[name=template]").val() ); 
 
     jQuery(function() {
         jQuery("select[name=template]").change(function() {

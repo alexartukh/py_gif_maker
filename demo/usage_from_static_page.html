@@ -1,0 +1,125 @@
+<!doctype html>
+
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <script src="https://code.jquery.com/jquery-4.0.0.js"
+        integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+    <script>
+        function get_auth_token(login, password) {
+            jQuery('#gif_maker_login').text(login);
+            jQuery('#gif_maker_password').text(password);
+
+            jQuery.ajax({
+                url: "/login",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    login: login,
+                    password: password
+                }),
+                success: function (response) {
+                    if (response.error) {
+                        console.error("GIF MAKER - Login failed:", response.message);
+                        return;
+                    }
+                    var token = response.token;
+                    console.log("GIF MAKER - Got token:", token);
+
+                    // сохраняем как глобальную переменную, чтобы использовать дальше на странице
+                    window.gifMakerAuthToken = token;
+                    sessionStorage.setItem("authToken", token);
+                },
+                error: function (xhr) {
+                    console.error("GIF MAKER - Request failed:", xhr.status, xhr.responseText);
+                }
+            });
+        }
+
+        jQuery(function () {
+
+            let login = "test";
+            let password = "123";
+
+            get_auth_token(login, password);
+
+            // window.gifMakerAuthToken should be defined before a button click
+            jQuery("#assign_images_button").click(function () {
+                let url1 = "http://localhost:5555/g?token=__TOKEN__&t=aaa&template=100";
+                let url2 = "http://localhost:5555/g?token=__TOKEN__&t=bbb&template=100";
+
+                let url3 = "http://localhost:5555/g?token=__TOKEN__&t=aaa&template=200";
+                let url4 = "http://localhost:5555/g?token=__TOKEN__&t=bbb&template=200";
+
+                let url5 = "http://localhost:5555/g?token=__TOKEN__&t=aaa&template=300";
+                let url6 = "http://localhost:5555/g?token=__TOKEN__&t=bbb&template=300";
+
+                jQuery('#demo1').attr('src', url1.replace('__TOKEN__', window.gifMakerAuthToken));
+                jQuery('#demo2').attr('src', url2.replace('__TOKEN__', window.gifMakerAuthToken));
+
+                jQuery('#demo3').attr('src', url3.replace('__TOKEN__', window.gifMakerAuthToken));
+                jQuery('#demo4').attr('src', url4.replace('__TOKEN__', window.gifMakerAuthToken));
+
+                jQuery('#demo5').attr('src', url5.replace('__TOKEN__', window.gifMakerAuthToken));
+                jQuery('#demo6').attr('src', url6.replace('__TOKEN__', window.gifMakerAuthToken));
+            });
+
+        });
+    </script>
+</head>
+
+<body>
+    <table>
+
+        <tr>
+            <td colspan="2">
+                <input type="button" id="assign_images_button" value="Get Images">
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2">
+                Template 100
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img id="demo1" src="" alt="Waiting...">
+            </td>
+            <td>
+                <img id="demo2" src="" alt="Waiting...">
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2">
+                Template 200
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img id="demo3" src="" alt="Waiting...">
+            </td>
+            <td>
+                <img id="demo4" src="" alt="Waiting...">
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2">
+                Template 300
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img id="demo5" src="" alt="Waiting...">
+            </td>
+            <td>
+                <img id="demo6" src="" alt="Waiting...">
+            </td>
+        </tr>
+
+    </table>
+</body>

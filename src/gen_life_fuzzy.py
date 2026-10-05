@@ -4,7 +4,7 @@ import sys
 
 from gen_base import GifGeneratorBase
 
-class LifeMyGenerator(GifGeneratorBase):
+class FuzzyLifeGenerator(GifGeneratorBase):
 
     def __init__(self, textdata=""):
         super().__init__(textdata)
@@ -22,15 +22,16 @@ class LifeMyGenerator(GifGeneratorBase):
         frames2skip = 5    
         random.seed(42)
         a = []
-        b = []
         self.init_matrix_50_50(a)
-        self.init_matrix_zeros(b)
+        if self.random_colors:
+            self.use_random_colors(digest)
 
         max_near = 0
         bits = []
         for b_idx in range(6, 16): # byes with indexes 6-15
-            for offset in range(1,9): # 1-8
+            for offset in range(0, 8): # 0-7
                 v = (digest[b_idx] >> offset) & 1
+
                 bits.append(v)
                 if v == 1: max_near = max_near + 1
 
@@ -38,7 +39,7 @@ class LifeMyGenerator(GifGeneratorBase):
 
             img = self.draw_frame(a)
 
-            # create matrix B from A
+            # create new A from old A
             for i in range(self.height):
                 for j in range(self.width):
 
@@ -64,16 +65,14 @@ class LifeMyGenerator(GifGeneratorBase):
                     # b3s23 (classic life, but with fractions)
                     if (a[i][j]):
                         if (near >= (1 / 8 * max_near) and near <= (3 / 8 * max_near)):
-                            b[i][j] = 1
+                            a[i][j] = 1
                         else:
-                            b[i][j] = 0
+                            a[i][j] = 0
                     else:
                         if (near >= (2 / 8 * max_near) and near <= (3 / 8 * max_near)):
-                            b[i][j] = 1
+                            a[i][j] = 1
                         else:
-                            b[i][j] = 0
-
-            a = b
+                            a[i][j] = 0
 
             if (k >= frames2skip):
                 self.save_frame(img, k)
@@ -100,6 +99,6 @@ if __name__ == "__main__":
         hex_color_line=#FF00FF
     """
 
-    generator = LifeMyGenerator(settings)
+    generator = FuzzyLifeGenerator(settings)
 
     generator.make_gif(hashlib.md5(text.encode('utf-8')).digest(), 0)

@@ -6,7 +6,7 @@ class LifeSimpleGenerator(GifGeneratorBase):
 
     def __init__(self, textdata=""):
         super().__init__(textdata)
-        self.type = 100
+        self.type = 1
 
     def get_description(self):
         return [
@@ -60,7 +60,7 @@ class LifeSimpleGenerator(GifGeneratorBase):
                         else:
                             b[i][j] = 0
 
-            a = b
+            a, b = b, a
 
             self.save_frame(img, k)
 
