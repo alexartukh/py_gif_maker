@@ -99,9 +99,26 @@ class Anno(
         except HTTPException as e:
             return e
 
+    # public API endpoints that may be called from pages on other domains
+    CORS_PATHS = ("/login", "/g")
+
     def wsgi_app(self, environ, start_response):
         request = Request(environ)
-        response = self.dispatch_request(request)
+        cors = request.path in self.CORS_PATHS
+
+        # CORS preflight : browser sends OPTIONS before a cross-origin JSON POST
+        if cors and request.method == "OPTIONS":
+            response = Response(status=204)
+        else:
+            response = self.dispatch_request(request)
+            if isinstance(response, HTTPException):
+                response = response.get_response(environ)
+
+        if cors:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            response.headers["Access-Control-Max-Age"] = "86400"
         return response(environ, start_response)
 
     def __call__(self, environ, start_response):

@@ -9,8 +9,9 @@
             jQuery('#gif_maker_login').text(login);
             jQuery('#gif_maker_password').text(password);
 
+            // URL is full and absolute (not short /login) 
             jQuery.ajax({
-                url: "/login",
+                url: "http://localhost:5555/login",
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({
