@@ -4,7 +4,8 @@ import base64
 import time
 import os
 
-SECRET_KEY = os.urandom(32)
+# SECRET_KEY = os.urandom(32)
+SECRET_KEY = b"gif-maker-dev-secret-change-me-0123456789abcdef"
 TOKEN_TTL_SECONDS = 3600  # tokens are valid for 1 hour
 
 def make_token(user_id, ttl=TOKEN_TTL_SECONDS):
